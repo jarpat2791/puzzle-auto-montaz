@@ -12,6 +12,7 @@
     <!-- Biblioteki Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     
     <style>
         * {
@@ -315,6 +316,8 @@
         .model-placeholder {
             color: rgba(255, 255, 255, 0.7);
             font-size: 1rem;
+            text-align: center;
+            padding: 20px;
         }
 
         .model-viewer {
@@ -407,13 +410,19 @@
             width: 0%;
             transition: width 0.3s ease;
         }
+
+        .car-silhouette {
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🚗 Montaż Samochodu</h1>
-            <div class="level-info">Poziom <span id="current-level">1</span>/5 - <span id="car-brand">Volkswagen Golf</span></div>
+            <div class="level-info">Poziom <span id="current-level">1</span>/3 - <span id="car-brand">Volkswagen Golf</span></div>
             <div class="progress-bar">
                 <div class="progress" id="progress"></div>
             </div>
@@ -427,7 +436,9 @@
 
             <div class="car-area">
                 <div class="car-container">
-                    <div class="car-outline" id="car-outline"></div>
+                    <div class="car-outline" id="car-outline">
+                        <!-- Sylwetka będzie dodana przez JavaScript -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -473,33 +484,33 @@
     </div>
 
     <script>
-        // Ulepszone ikony części z lepszą grafiką
+        // Dane o częściach samochodowych z SVG
         const partIcons = {
-            "mask": '<svg viewBox="0 0 100 60" fill="#FF5722"><path d="M 10 20 L 40 15 L 60 15 L 90 20 L 90 40 L 60 45 L 40 45 L 10 40 Z" fill="#E53935" stroke="#C62828" stroke-width="1"/><rect x="25" y="25" width="20" height="15" rx="2" fill="#C62828"/><rect x="55" y="25" width="20" height="15" rx="2" fill="#C62828"/></svg>',
-            "door-front": '<svg viewBox="0 0 80 120" fill="#2196F3"><path d="M 15 15 L 65 15 L 65 105 L 15 105 Z" fill="#1976D2" stroke="#1565C0" stroke-width="2" rx="8"/><rect x="20" y="25" width="40" height="35" fill="#64B5F6" rx="3"/><circle cx="55" cy="75" r="6" fill="#FFC107"/><path d="M 20 60 L 60 60" stroke="#1565C0" stroke-width="1"/></svg>',
-            "door-back": '<svg viewBox="0 0 80 120" fill="#2196F3"><path d="M 15 15 L 65 15 L 65 105 L 15 105 Z" fill="#1976D2" stroke="#1565C0" stroke-width="2" rx="8"/><rect x="20" y="25" width="40" height="35" fill="#64B5F6" rx="3"/><circle cx="25" cy="75" r="6" fill="#FFC107"/><path d="M 20 60 L 60 60" stroke="#1565C0" stroke-width="1"/></svg>',
-            "wheel": '<svg viewBox="0 0 100 100" fill="#424242"><circle cx="50" cy="50" r="42" fill="#212121" stroke="#616161" stroke-width="2"/><circle cx="50" cy="50" r="32" fill="#37474F"/><circle cx="50" cy="50" r="22" fill="#546E7A"/><circle cx="50" cy="50" r="12" fill="#78909C"/><path d="M 50 10 L 50 90 M 10 50 L 90 50" stroke="#212121" stroke-width="2"/></svg>',
-            "bumper-front": '<svg viewBox="0 0 200 40" fill="#9E9E9E"><path d="M 15 10 Q 15 5 25 5 L 175 5 Q 185 5 185 10 L 185 30 Q 185 35 175 35 L 25 35 Q 15 35 15 30 Z" fill="#757575" stroke="#616161" stroke-width="1"/><rect x="35" y="12" width="35" height="18" rx="4" fill="#424242"/><rect x="130" y="12" width="35" height="18" rx="4" fill="#424242"/></svg>',
-            "bumper-back": '<svg viewBox="0 0 200 40" fill="#9E9E9E"><path d="M 15 10 Q 15 5 25 5 L 175 5 Q 185 5 185 10 L 185 30 Q 185 35 175 35 L 25 35 Q 15 35 15 30 Z" fill="#757575" stroke="#616161" stroke-width="1"/><rect x="65" y="12" width="70" height="12" rx="3" fill="#D32F2F"/><rect x="75" y="25" width="50" height="3" fill="#B71C1C"/></svg>',
-            "headlight": '<svg viewBox="0 0 60 40" fill="#FFF"><ellipse cx="30" cy="20" rx="28" ry="18" fill="#FFEB3B" stroke="#FFC107" stroke-width="1"/><ellipse cx="30" cy="20" rx="18" ry="12" fill="#FFF9C4"/><ellipse cx="25" cy="18" rx="4" ry="3" fill="#FFFFFF"/></svg>',
-            "taillight": '<svg viewBox="0 0 60 40" fill="#D32F2F"><ellipse cx="30" cy="20" rx="28" ry="18" fill="#C62828" stroke="#B71C1C" stroke-width="1"/><ellipse cx="30" cy="20" rx="18" ry="12" fill="#FF5252"/><ellipse cx="25" cy="18" rx="4" ry="3" fill="#FF8A80"/></svg>',
-            "window": '<svg viewBox="0 0 100 60" fill="#4FC3F7"><path d="M 8 8 L 50 5 L 92 8 L 92 52 L 50 55 L 8 52 Z" fill="#29B6F6" opacity="0.7" stroke="#01579B" stroke-width="1"/><path d="M 8 30 L 92 30" stroke="#01579B" stroke-width="1.5" opacity="0.6"/></svg>',
-            "mirror": '<svg viewBox="0 0 50 60" fill="#546E7A"><ellipse cx="25" cy="30" rx="22" ry="28" fill="#37474F" stroke="#263238" stroke-width="1"/><ellipse cx="25" cy="30" rx="16" ry="22" fill="#90CAF9" opacity="0.4"/><ellipse cx="20" cy="25" rx="3" ry="4" fill="#E3F2FD"/></svg>',
-            "roof": '<svg viewBox="0 0 150 50" fill="#607D8B"><path d="M 15 40 Q 15 15 40 12 L 110 12 Q 135 15 135 40 Z" fill="#455A64" stroke="#37474F" stroke-width="1"/><path d="M 40 12 L 40 25 M 110 12 L 110 25" stroke="#37474F" stroke-width="1"/></svg>',
-            "grill": '<svg viewBox="0 0 100 60" fill="#212121"><rect x="12" y="12" width="76" height="36" rx="4" fill="#424242" stroke="#212121" stroke-width="1"/><line x1="22" y1="18" x2="22" y2="42" stroke="#757575" stroke-width="4"/><line x1="38" y1="18" x2="38" y2="42" stroke="#757575" stroke-width="4"/><line x1="54" y1="18" x2="54" y2="42" stroke="#757575" stroke-width="4"/><line x1="70" y1="18" x2="70" y2="42" stroke="#757575" stroke-width="4"/><line x1="86" y1="18" x2="86" y2="42" stroke="#757575" stroke-width="4"/></svg>',
-            "trunk": '<svg viewBox="0 0 120 80" fill="#37474F"><path d="M 15 15 L 105 15 L 105 65 L 15 65 Z" fill="#455A64" stroke="#263238" stroke-width="2" rx="6"/><rect x="25" y="45" width="70" height="4" fill="#263238" rx="1"/><circle cx="95" cy="35" r="4" fill="#78909C"/></svg>',
-            "fender-front": '<svg viewBox="0 0 80 100" fill="#546E7A"><path d="M 15 20 Q 35 15 60 25 L 60 85 Q 35 90 15 80 Z" fill="#607D8B" stroke="#455A64" stroke-width="2"/><ellipse cx="40" cy="55" rx="20" ry="8" fill="#78909C" opacity="0.3"/></svg>',
-            "fender-back": '<svg viewBox="0 0 80 100" fill="#546E7A"><path d="M 65 20 Q 45 15 20 25 L 20 85 Q 45 90 65 80 Z" fill="#607D8B" stroke="#455A64" stroke-width="2"/><ellipse cx="40" cy="55" rx="20" ry="8" fill="#78909C" opacity="0.3"/></svg>',
-            "spoiler": '<svg viewBox="0 0 150 40" fill="#212121"><path d="M 15 30 L 15 22 L 135 15 L 135 25 Z" fill="#424242" stroke="#212121" stroke-width="1"/><rect x="15" y="22" width="120" height="12" fill="#212121" stroke="#424242" stroke-width="1"/><rect x="10" y="30" width="130" height="5" fill="#37474F"/></svg>',
-            "antenna": '<svg viewBox="0 0 20 100" fill="#757575"><line x1="10" y1="8" x2="10" y2="85" stroke="#424242" stroke-width="3" stroke-linecap="round"/><circle cx="10" cy="8" r="6" fill="#9E9E9E"/><circle cx="10" cy="85" r="4" fill="#BDBDBD"/></svg>',
-            "exhaust": '<svg viewBox="0 0 80 40" fill="#616161"><ellipse cx="40" cy="25" rx="32" ry="12" fill="#424242" stroke="#212121" stroke-width="1"/><ellipse cx="40" cy="20" rx="25" ry="8" fill="#212121"/><ellipse cx="40" cy="15" rx="18" ry="5" fill="#37474F"/></svg>',
-            "logo": '<svg viewBox="0 0 60 60" fill="#1976D2"><circle cx="30" cy="30" r="26" fill="#2196F3" stroke="#0D47A1" stroke-width="2"/><circle cx="30" cy="30" r="20" fill="#BBDEFB"/><path d="M 20 25 L 30 35 L 40 25" stroke="#0D47A1" stroke-width="3" fill="none" stroke-linecap="round"/></svg>'
+            "mask": '<svg viewBox="0 0 100 60" fill="#FF5722"><rect x="10" y="10" width="80" height="40" rx="5" fill="#E53935"/><rect x="20" y="20" width="25" height="20" fill="#C62828"/><rect x="55" y="20" width="25" height="20" fill="#C62828"/></svg>',
+            "door-front": '<svg viewBox="0 0 80 120" fill="#2196F3"><rect x="10" y="10" width="60" height="100" rx="8" fill="#1976D2"/><rect x="15" y="20" width="50" height="40" fill="#64B5F6"/><circle cx="60" cy="70" r="5" fill="#FFC107"/></svg>',
+            "door-back": '<svg viewBox="0 0 80 120" fill="#2196F3"><rect x="10" y="10" width="60" height="100" rx="8" fill="#1976D2"/><rect x="15" y="20" width="50" height="40" fill="#64B5F6"/><circle cx="20" cy="70" r="5" fill="#FFC107"/></svg>',
+            "wheel": '<svg viewBox="0 0 100 100" fill="#424242"><circle cx="50" cy="50" r="45" fill="#212121"/><circle cx="50" cy="50" r="30" fill="#616161"/><circle cx="50" cy="50" r="15" fill="#9E9E9E"/></svg>',
+            "bumper-front": '<svg viewBox="0 0 200 40" fill="#9E9E9E"><rect x="10" y="5" width="180" height="30" rx="10" fill="#757575"/><rect x="30" y="10" width="40" height="20" rx="3" fill="#424242"/><rect x="130" y="10" width="40" height="20" rx="3" fill="#424242"/></svg>',
+            "bumper-back": '<svg viewBox="0 0 200 40" fill="#9E9E9E"><rect x="10" y="5" width="180" height="30" rx="10" fill="#757575"/><rect x="60" y="10" width="80" height="15" rx="3" fill="#D32F2F"/></svg>',
+            "headlight": '<svg viewBox="0 0 60 40" fill="#FFF"><ellipse cx="30" cy="20" rx="25" ry="15" fill="#FFEB3B"/><ellipse cx="30" cy="20" rx="15" ry="10" fill="#FFF9C4"/></svg>',
+            "taillight": '<svg viewBox="0 0 60 40" fill="#D32F2F"><ellipse cx="30" cy="20" rx="25" ry="15" fill="#C62828"/><ellipse cx="30" cy="20" rx="15" ry="10" fill="#FF5252"/></svg>',
+            "window": '<svg viewBox="0 0 100 60" fill="#4FC3F7"><rect x="5" y="5" width="90" height="50" rx="5" fill="#29B6F6" opacity="0.6"/><path d="M 5 25 L 95 25" stroke="#01579B" stroke-width="2"/></svg>',
+            "mirror": '<svg viewBox="0 0 50 60" fill="#546E7A"><ellipse cx="25" cy="30" rx="20" ry="25" fill="#37474F"/><ellipse cx="25" cy="30" rx="15" ry="20" fill="#90CAF9" opacity="0.5"/></svg>',
+            "roof": '<svg viewBox="0 0 150 50" fill="#607D8B"><path d="M 10 40 Q 10 10 40 10 L 110 10 Q 140 10 140 40 Z" fill="#455A64"/></svg>',
+            "grill": '<svg viewBox="0 0 100 60" fill="#212121"><rect x="10" y="10" width="80" height="40" rx="3" fill="#424242"/><line x1="20" y1="20" x2="20" y2="40" stroke="#757575" stroke-width="3"/><line x1="35" y1="20" x2="35" y2="40" stroke="#757575" stroke-width="3"/><line x1="50" y1="20" x2="50" y2="40" stroke="#757575" stroke-width="3"/><line x1="65" y1="20" x2="65" y2="40" stroke="#757575" stroke-width="3"/><line x1="80" y1="20" x2="80" y2="40" stroke="#757575" stroke-width="3"/></svg>',
+            "trunk": '<svg viewBox="0 0 120 80" fill="#37474F"><rect x="10" y="10" width="100" height="60" rx="5" fill="#455A64"/><rect x="20" y="40" width="80" height="3" fill="#263238"/></svg>',
+            "fender-front": '<svg viewBox="0 0 80 100" fill="#546E7A"><path d="M 10 10 Q 40 10 60 30 L 60 80 Q 40 90 10 90 Z" fill="#607D8B"/></svg>',
+            "fender-back": '<svg viewBox="0 0 80 100" fill="#546E7A"><path d="M 70 10 Q 40 10 20 30 L 20 80 Q 40 90 70 90 Z" fill="#607D8B"/></svg>',
+            "spoiler": '<svg viewBox="0 0 150 40" fill="#212121"><path d="M 10 30 L 10 20 L 140 10 L 140 20 Z" fill="#424242"/><rect x="10" y="20" width="130" height="15" fill="#212121"/></svg>',
+            "antenna": '<svg viewBox="0 0 20 100" fill="#757575"><line x1="10" y1="10" x2="10" y2="80" stroke="#424242" stroke-width="3"/><circle cx="10" cy="10" r="5" fill="#9E9E9E"/></svg>',
+            "exhaust": '<svg viewBox="0 0 80 40" fill="#616161"><ellipse cx="40" cy="20" rx="35" ry="15" fill="#424242"/><ellipse cx="40" cy="20" rx="25" ry="10" fill="#212121"/></svg>',
+            "logo": '<svg viewBox="0 0 60 60" fill="#1976D2"><circle cx="30" cy="30" r="25" fill="#2196F3"/><circle cx="30" cy="30" r="20" fill="#BBDEFB"/><text x="30" y="35" text-anchor="middle" font-size="20" font-weight="bold" fill="#0D47A1">V</text></svg>'
         };
 
         const levels = [
             {
                 brand: "Volkswagen Golf",
-                modelFile: "models/vw_golf.plg", // Zmiana na .ply dla Three.js
+                modelFile: "models/vw_golf.glb",
                 color: 0x2A6EBB,
                 parts: [
                     { id: "mask", name: "Maska", x: 42, y: 20, w: 16, h: 12, icon: "mask" },
@@ -526,7 +537,7 @@
             },
             {
                 brand: "Ford Focus",
-                modelFile: "models/ford_focus.ply",
+                modelFile: "models/ford_focus.glb",
                 color: 0x1E4A75,
                 parts: [
                     { id: "mask", name: "Maska", x: 42, y: 20, w: 16, h: 12, icon: "mask" },
@@ -568,59 +579,37 @@
                             <feMergeNode in="SourceGraphic"/>
                         </feMerge>
                     </filter>
-                    <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="rgba(255,255,255,0.1)" />
-                        <stop offset="100%" stop-color="rgba(255,255,255,0.05)" />
-                    </linearGradient>
                 </defs>
                 
                 <!-- Karoseria samochodu -->
-                <path d="M 18 52 
-                         C 20 38, 28 30, 40 28 
-                         L 60 28 
-                         C 72 30, 80 38, 82 52 
-                         L 82 68 
-                         C 80 72, 72 75, 60 76 
-                         L 40 76 
-                         C 28 75, 20 72, 18 68 
-                         Z" 
-                      fill="url(#carGradient)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" filter="url(#shadow)"/>
+                <path d="M 20 50 L 25 35 L 30 30 L 45 25 L 55 25 L 70 30 L 75 35 L 80 50 L 80 65 L 20 65 Z" 
+                      fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-width="1" filter="url(#shadow)"/>
                 
                 <!-- Szyby -->
-                <path d="M 30 32 
-                         C 32 30, 38 29, 42 30 
-                         L 42 38 
-                         L 30 38 
-                         Z" 
-                      fill="rgba(100,181,246,0.25)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
-                <path d="M 58 32 
-                         C 62 30, 68 29, 70 32 
-                         L 70 38 
-                         L 58 38 
-                         Z" 
-                      fill="rgba(100,181,246,0.25)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
+                <path d="M 32 32 L 38 28 L 48 28 L 48 35 L 32 35 Z" 
+                      fill="rgba(100,181,246,0.2)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+                <path d="M 52 28 L 62 28 L 68 32 L 68 35 L 52 35 Z" 
+                      fill="rgba(100,181,246,0.2)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
                 
                 <!-- Koła (miejsca) -->
-                <ellipse cx="28" cy="68" rx="9" ry="6" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-                <ellipse cx="72" cy="68" rx="9" ry="6" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-                <ellipse cx="38" cy="68" rx="9" ry="6" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-                <ellipse cx="62" cy="68" rx="9" ry="6" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+                <circle cx="28" cy="65" r="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                <circle cx="72" cy="65" r="8" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
             </svg>
         `;
 
         // Zmienne Three.js
         let scene, camera, renderer, controls, currentModel = null;
         let isRotating = false;
+        let gltfLoader;
 
         let currentLevel = 0;
         let placedParts = 0;
         let totalParts = 0;
-        let touchStartX = 0;
-        let touchStartY = 0;
         let draggedElement = null;
         let draggedPartId = null;
         let deferredPrompt = null;
 
+        // Elementy DOM
         const partsContainer = document.getElementById('parts-container');
         const carOutline = document.getElementById('car-outline');
         const currentLevelElement = document.getElementById('current-level');
@@ -663,7 +652,10 @@
             camera.position.z = 5;
             
             // Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true
+            });
             renderer.setSize(modelContainer.clientWidth, modelContainer.clientHeight);
             renderer.setClearColor(0x000000, 0);
             modelContainer.appendChild(renderer.domElement);
@@ -685,9 +677,17 @@
             controls.maxDistance = 10;
             controls.maxPolarAngle = Math.PI;
             
+            // GLTF Loader
+            gltfLoader = new THREE.GLTFLoader();
+            
             // Animacja
             function animate() {
                 requestAnimationFrame(animate);
+                
+                if (isRotating && currentModel) {
+                    currentModel.rotation.y += 0.01;
+                }
+                
                 controls.update();
                 renderer.render(scene, camera);
             }
@@ -705,165 +705,47 @@
             }
         }
 
-        // Prosty loader PLG (Polygon File Format)
-        class PLGLoader {
-            load(url, onLoad, onProgress, onError) {
-                const loader = new THREE.FileLoader();
-                loader.load(url, (text) => {
-                    try {
-                        const model = this.parse(text);
-                        onLoad(model);
-                    } catch (error) {
-                        if (onError) onError(error);
-                        console.error('Error parsing PLG file:', error);
-                        // Fallback: utwórz prosty model samochodu
-                        this.createFallbackModel().then(onLoad);
-                    }
-                }, onProgress, onError);
-            }
-
-            parse(text) {
-                const lines = text.split('\n').filter(line => line.trim() !== '');
-                const vertices = [];
-                const faces = [];
-                const colors = [];
-                
-                for (const line of lines) {
-                    const parts = line.trim().split(/\s+/);
-                    
-                    if (parts[0] === 'vertex') {
-                        // vertex x y z [r g b]
-                        vertices.push(new THREE.Vector3(
-                            parseFloat(parts[1]),
-                            parseFloat(parts[2]), 
-                            parseFloat(parts[3])
-                        ));
-                        if (parts.length >= 7) {
-                            colors.push(new THREE.Color(
-                                parseFloat(parts[4]),
-                                parseFloat(parts[5]),
-                                parseFloat(parts[6])
-                            ));
-                        }
-                    } else if (parts[0] === 'face') {
-                        // face v1 v2 v3 ...
-                        const faceVertices = parts.slice(1).map(idx => parseInt(idx));
-                        faces.push(faceVertices);
-                    }
-                }
-                
-                const geometry = new THREE.BufferGeometry();
-                const positions = [];
-                const indices = [];
-                
-                // Konwersja do formatu Three.js
-                vertices.forEach(vertex => {
-                    positions.push(vertex.x, vertex.y, vertex.z);
-                });
-                
-                faces.forEach(face => {
-                    for (let i = 1; i < face.length - 1; i++) {
-                        indices.push(face[0], face[i], face[i + 1]);
-                    }
-                });
-                
-                geometry.setIndex(indices);
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-                geometry.computeVertexNormals();
-                
-                const material = new THREE.MeshPhongMaterial({ 
-                    color: levels[currentLevel].color || 0x2A6EBB,
-                    shininess: 30,
-                    side: THREE.DoubleSide
-                });
-                
-                return new THREE.Mesh(geometry, material);
-            }
-
-            createFallbackModel() {
-                return new Promise((resolve) => {
-                    // Utwórz prosty model samochodu jako fallback
-                    const group = new THREE.Group();
-                    
-                    // Karoseria
-                    const bodyGeometry = new THREE.BoxGeometry(3, 1, 1.5);
-                    const bodyMaterial = new THREE.MeshPhongMaterial({ 
-                        color: levels[currentLevel].color || 0x2A6EBB 
-                    });
-                    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-                    group.add(body);
-                    
-                    // Kabina
-                    const cabinGeometry = new THREE.BoxGeometry(1.5, 0.8, 1.6);
-                    const cabinMaterial = new THREE.MeshPhongMaterial({ 
-                        color: 0x1a2a6c,
-                        transparent: true,
-                        opacity: 0.7
-                    });
-                    const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
-                    cabin.position.y = 0.4;
-                    cabin.position.z = 0.1;
-                    group.add(cabin);
-                    
-                    // Koła
-                    const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
-                    const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
-                    
-                    const positions = [
-                        [-1, -0.6, 0.8], [1, -0.6, 0.8],
-                        [-1, -0.6, -0.8], [1, -0.6, -0.8]
-                    ];
-                    
-                    positions.forEach(pos => {
-                        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
-                        wheel.position.set(pos[0], pos[1], pos[2]);
-                        wheel.rotation.z = Math.PI / 2;
-                        group.add(wheel);
-                    });
-                    
-                    resolve(group);
-                });
-            }
-        }
-
         function load3DModel() {
             const level = levels[currentLevel];
-            modelPlaceholder.textContent = `Ładowanie modelu 3D: ${level.brand}...`;
+            modelPlaceholder.innerHTML = `Ładowanie modelu 3D: ${level.brand}...<div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>`;
             loadingProgress.style.width = '0%';
             
             // Wyczyść poprzedni model
             if (currentModel) {
                 scene.remove(currentModel);
+                currentModel = null;
             }
-            
-            const loader = new PLGLoader();
             
             // Symulacja postępu ładowania
             const progressInterval = setInterval(() => {
                 const currentWidth = parseInt(loadingProgress.style.width) || 0;
-                if (currentWidth < 90) {
+                if (currentWidth < 80) {
                     loadingProgress.style.width = (currentWidth + 10) + '%';
                 }
             }, 200);
             
-            loader.load(
+            // Ładowanie modelu GLB
+            gltfLoader.load(
                 level.modelFile,
-                (model) => {
+                (gltf) => {
                     clearInterval(progressInterval);
                     loadingProgress.style.width = '100%';
                     
-                    currentModel = model;
-                    scene.add(model);
+                    currentModel = gltf.scene;
+                    scene.add(currentModel);
                     
-                    // Ustawienie pozycji i skali
-                    model.position.set(0, 0, 0);
-                    model.scale.set(0.5, 0.5, 0.5);
-                    
-                    // Wyśrodkuj model
-                    const box = new THREE.Box3().setFromObject(model);
+                    // Dopasuj rozmiar modelu
+                    const box = new THREE.Box3().setFromObject(currentModel);
                     const center = box.getCenter(new THREE.Vector3());
-                    model.position.sub(center);
+                    const size = box.getSize(new THREE.Vector3());
                     
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 3 / maxDim;
+                    
+                    currentModel.scale.setScalar(scale);
+                    currentModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+                    
+                    // Resetuj kontrolki kamery
                     controls.reset();
                     
                     setTimeout(() => {
@@ -871,7 +753,7 @@
                     }, 500);
                 },
                 (progress) => {
-                    // Aktualny postęp ładowania
+                    // Prawdziwy postęp ładowania
                     if (progress.lengthComputable) {
                         const percent = (progress.loaded / progress.total) * 100;
                         loadingProgress.style.width = percent + '%';
@@ -879,18 +761,67 @@
                 },
                 (error) => {
                     clearInterval(progressInterval);
-                    console.error('Error loading 3D model:', error);
-                    modelPlaceholder.innerHTML = `
-                        <div style="text-align: center;">
-                            <div style="font-size: 3rem; margin-bottom: 10px;">🚗</div>
-                            <div>Model 3D: ${level.brand}</div>
-                            <div style="font-size: 0.8rem; margin-top: 10px; opacity: 0.7;">
-                                (Model zastępczy - plik nie znaleziony)
-                            </div>
-                        </div>
-                    `;
+                    console.error('Błąd ładowania modelu 3D:', error);
+                    createFallbackModel(level);
                 }
             );
+        }
+
+        function createFallbackModel(level) {
+            const group = new THREE.Group();
+            
+            // Karoseria
+            const bodyGeometry = new THREE.BoxGeometry(3, 1, 1.5);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: level.color || 0x2A6EBB
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            group.add(body);
+            
+            // Kabina
+            const cabinGeometry = new THREE.BoxGeometry(1.5, 0.8, 1.6);
+            const cabinMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x1a2a6c,
+                transparent: true,
+                opacity: 0.7
+            });
+            const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
+            cabin.position.y = 0.4;
+            cabin.position.z = 0.1;
+            group.add(cabin);
+            
+            // Koła
+            const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+            const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            
+            const positions = [
+                [-1, -0.6, 0.8], [1, -0.6, 0.8],
+                [-1, -0.6, -0.8], [1, -0.6, -0.8]
+            ];
+            
+            positions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                wheel.rotation.z = Math.PI / 2;
+                group.add(wheel);
+            });
+            
+            currentModel = group;
+            scene.add(currentModel);
+            
+            loadingProgress.style.width = '100%';
+            
+            setTimeout(() => {
+                modelPlaceholder.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">🚗</div>
+                        <div>Model 3D: ${level.brand}</div>
+                        <div style="font-size: 0.8rem; margin-top: 10px; opacity: 0.7;">
+                            (Model zastępczy)
+                        </div>
+                    </div>
+                `;
+            }, 500);
         }
 
         function setupModelControls() {
@@ -913,9 +844,6 @@
                 camera.position.set(0, 0, 5);
             });
         }
-
-        // Pozostałe funkcje gry (loadLevel, setupEventListeners, etc.) pozostają bez zmian
-        // ... (tutaj wstaw pozostały kod gry z poprzedniej wersji)
 
         function loadLevel(levelIndex) {
             const level = levels[levelIndex];
@@ -977,6 +905,7 @@
             close3DButton.addEventListener('click', () => {
                 completedMessage.classList.remove('show');
                 modelPlaceholder.style.display = 'flex';
+                modelPlaceholder.innerHTML = `Ładowanie modelu 3D...<div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>`;
                 isRotating = false;
                 rotateModelBtn.textContent = '↻';
             });
@@ -993,7 +922,9 @@
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
-                installPrompt.classList.remove('hidden');
+                setTimeout(() => {
+                    installPrompt.classList.remove('hidden');
+                }, 3000);
             });
 
             window.addEventListener('appinstalled', () => {
@@ -1023,16 +954,12 @@
             }
         }
 
-        // Pozostałe funkcje obsługi przeciągania i upuszczania...
         function handleTouchStart(e) {
             const part = e.target.closest('.part');
             if (!part || part.classList.contains('placed')) return;
             
             e.preventDefault();
             const touch = e.touches[0];
-            touchStartX = touch.clientX;
-            touchStartY = touch.clientY;
-            
             startDrag(part, touch.clientX, touch.clientY);
         }
 
@@ -1181,6 +1108,7 @@
                 loadLevel(currentLevel);
                 completedMessage.classList.remove('show');
                 modelPlaceholder.style.display = 'flex';
+                modelPlaceholder.innerHTML = `Ładowanie modelu 3D...<div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>`;
             } else {
                 completedMessage.querySelector('h2').textContent = '🎊 Brawo!';
                 completedMessage.querySelector('p').textContent = 'Ukończyłeś wszystkie poziomy!';
@@ -1190,37 +1118,14 @@
                     loadLevel(currentLevel);
                     completedMessage.classList.remove('show');
                     modelPlaceholder.style.display = 'flex';
+                    modelPlaceholder.innerHTML = `Ładowanie modelu 3D...<div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>`;
                     nextLevelButton.onclick = null;
                     setupEventListeners();
                 };
             }
         }
 
-        window.addEventListener('beforeunload', () => {
-            const gameData = {
-                currentLevel: currentLevel,
-                timestamp: Date.now()
-            };
-            localStorage.setItem('carAssemblyGame', JSON.stringify(gameData));
-        });
-
-        window.addEventListener('load', () => {
-            const savedData = localStorage.getItem('carAssemblyGame');
-            if (savedData) {
-                const gameData = JSON.parse(savedData);
-                // Możesz dodać logikę do wczytania zapisanego poziomu
-            }
-            initGame();
-        });
-
-        // Automatyczny obrót modelu
-        function animateModel() {
-            if (isRotating && currentModel) {
-                currentModel.rotation.y += 0.01;
-            }
-            requestAnimationFrame(animateModel);
-        }
-        animateModel();
+        window.addEventListener('load', initGame);
     </script>
 </body>
 </html>

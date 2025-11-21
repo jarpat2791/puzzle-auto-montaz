@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a2a6c">
+    <meta name="description" content="Gra w montaż samochodu - zbieraj części i buduj pojazdy">
+    <title>Montaż Samochodu</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon-192x192.png" type="image/png">
+    
+    <!-- Biblioteki Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            padding: 15px 10px 10px;
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .level-info {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 20px;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .game-area {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            overflow: hidden;
+        }
+
+        .parts-panel {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .parts-panel h2 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .parts-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .parts-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .parts-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .parts-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        .part {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            touch-action: none;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .part.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+
+        .part.placed {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .part-icon {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .part-icon svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.3));
+        }
+
+        .part-name {
+            font-size: 0.7rem;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .car-area {
+            flex: 1.5;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .car-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .car-outline {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .car-silhouette {
+            width: 100%;
+            height: 100%;
+            opacity: 0.3;
+        }
+
+        .drop-zone {
+            position: absolute;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .drop-zone.highlight {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: rgba(76, 175, 80, 0.8);
+            border-width: 3px;
+            transform: scale(1.05);
+        }
+
+        .drop-zone.filled {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid rgba(76, 175, 80, 0.6);
+        }
+
+        .drop-zone.filled svg {
+            width: 90%;
+            height: 90%;
+            opacity: 0.8;
+        }
+
+        .controls {
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #FF5722, #FF7043);
+            color: white;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        button:disabled {
+            background: linear-gradient(135deg, #9E9E9E, #BDBDBD);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .completed-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        .completed-message.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .message-content {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f);
+            padding: 30px 20px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 95%;
+            max-height: 95vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .message-content h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .message-content p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .model-container {
+            width: 100%;
+            height: 300px;
+            margin: 15px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .model-placeholder {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+        }
+
+        .model-viewer {
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .model-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 100;
+        }
+
+        .model-controls button {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .dragging-part {
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.8;
+            transform: scale(1.2);
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+            50% { 
+                transform: scale(1.05);
+                box-shadow: 0 0 20px 10px rgba(76, 175, 80, 0);
+            }
+        }
+
+        .drop-zone.hint {
+            animation: pulse 1.5s infinite;
+        }
+
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 20px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1001;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .install-prompt button {
+            padding: 8px 16px;
+            font-size: 0.8rem;
+        }
+
+        .install-prompt.hidden {
+            display: none;
+        }
+
+        .loading-bar {
+            width: 80%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 10px auto;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 Montaż Samochodu</h1>
+            <div class="level-info">Poziom <span id="current-level">1</span>/5 - <span id="car-brand">Volkswagen Golf</span></div>
+            <div class="progress-bar">
+                <div class="progress" id="progress"></div>
+            </div>
+        </header>
+
+        <div class="game-area">
+            <div class="parts-panel">
+                <h2>Części</h2>
+                <div class="parts-container" id="parts-container"></div>
+            </div>
+
+            <div class="car-area">
+                <div class="car-container">
+                    <div class="car-outline" id="car-outline"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="reset-btn">🔄 Reset</button>
+            <button id="hint-btn">💡 Podpowiedź</button>
+            <button id="next-btn" disabled>➡️ Dalej</button>
+        </div>
+    </div>
+
+    <div class="completed-message" id="completed-message">
+        <div class="message-content">
+            <h2>🎉 Gratulacje!</h2>
+            <p>Ukończyłeś montaż <span id="completed-car">samochodu</span>!</p>
+            
+            <div class="model-container" id="model-container">
+                <div class="model-placeholder" id="model-placeholder">
+                    Ładowanie modelu 3D...
+                    <div class="loading-bar">
+                        <div class="loading-progress" id="loading-progress"></div>
+                    </div>
+                </div>
+                <div class="model-controls">
+                    <button id="rotate-model" title="Obróć">↻</button>
+                    <button id="zoom-in" title="Przybliż">+</button>
+                    <button id="zoom-out" title="Oddal">-</button>
+                    <button id="reset-view" title="Resetuj widok">⟲</button>
+                </div>
+            </div>
+            
+            <button id="next-level-btn">Następny poziom ➡️</button>
+            <button id="close-3d-btn" style="margin-top: 10px; background: linear-gradient(135deg, #9C27B0, #E91E63);">
+                Zamknij podgląd 3D
+            </button>
+        </div>
+    </div>
+
+    <div class="install-prompt hidden" id="install-prompt">
+        <span>Zainstaluj aplikację dla lepszego doświadczenia!</span>
+        <button id="install-btn">Zainstaluj</button>
+        <button id="dismiss-install" style="background: transparent; border: 1px solid white;">✕</button>
+    </div>
+
+    <script>
+        // Ulepszone ikony części z lepszą grafiką
+        const partIcons = {
+            "mask": '<svg viewBox="0 0 100 60" fill="#FF5722"><path d="M 10 20 L 40 15 L 60 15 L 90 20 L 90 40 L 60 45 L 40 45 L 10 40 Z" fill="#E53935" stroke="#C62828" stroke-width="1"/><rect x="25" y="25" width="20" height="15" rx="2" fill="#C62828"/><rect x="55" y="25" width="20" height="15" rx="2" fill="#C62828"/></svg>',
+            "door-front": '<svg viewBox="0 0 80 120" fill="#2196F3"><path d="M 15 15 L 65 15 L 65 105 L 15 105 Z" fill="#1976D2" stroke="#1565C0" stroke-width="2" rx="8"/><rect x="20" y="25" width="40" height="35" fill="#64B5F6" rx="3"/><circle cx="55" cy="75" r="6" fill="#FFC107"/><path d="M 20 60 L 60 60" stroke="#1565C0" stroke-width="1"/></svg>',
+            "door-back": '<svg viewBox="0 0 80 120" fill="#2196F3"><path d="M 15 15 L 65 15 L 65 105 L 15 105 Z" fill="#1976D2" stroke="#1565C0" stroke-width="2" rx="8"/><rect x="20" y="25" width="40" height="35" fill="#64B5F6" rx="3"/><circle cx="25" cy="75" r="6" fill="#FFC107"/><path d="M 20 60 L 60 60" stroke="#1565C0" stroke-width="1"/></svg>',
+            "wheel": '<svg viewBox="0 0 100 100" fill="#424242"><circle cx="50" cy="50" r="42" fill="#212121" stroke="#616161" stroke-width="2"/><circle cx="50" cy="50" r="32" fill="#37474F"/><circle cx="50" cy="50" r="22" fill="#546E7A"/><circle cx="50" cy="50" r="12" fill="#78909C"/><path d="M 50 10 L 50 90 M 10 50 L 90 50" stroke="#212121" stroke-width="2"/></svg>',
+            "bumper-front": '<svg viewBox="0 0 200 40" fill="#9E9E9E"><path d="M 15 10 Q 15 5 25 5 L 175 5 Q 185 5 185 10 L 185 30 Q 185 35 175 35 L 25 35 Q 15 35 15 30 Z" fill="#757575" stroke="#616161" stroke-width="1"/><rect x="35" y="12" width="35" height="18" rx="4" fill="#424242"/><rect x="130" y="12" width="35" height="18" rx="4" fill="#424242"/></svg>',
+            "bumper-back": '<svg viewBox="0 0 200 40" fill="#9E9E9E"><path d="M 15 10 Q 15 5 25 5 L 175 5 Q 185 5 185 10 L 185 30 Q 185 35 175 35 L 25 35 Q 15 35 15 30 Z" fill="#757575" stroke="#616161" stroke-width="1"/><rect x="65" y="12" width="70" height="12" rx="3" fill="#D32F2F"/><rect x="75" y="25" width="50" height="3" fill="#B71C1C"/></svg>',
+            "headlight": '<svg viewBox="0 0 60 40" fill="#FFF"><ellipse cx="30" cy="20" rx="28" ry="18" fill="#FFEB3B" stroke="#FFC107" stroke-width="1"/><ellipse cx="30" cy="20" rx="18" ry="12" fill="#FFF9C4"/><ellipse cx="25" cy="18" rx="4" ry="3" fill="#FFFFFF"/></svg>',
+            "taillight": '<svg viewBox="0 0 60 40" fill="#D32F2F"><ellipse cx="30" cy="20" rx="28" ry="18" fill="#C62828" stroke="#B71C1C" stroke-width="1"/><ellipse cx="30" cy="20" rx="18" ry="12" fill="#FF5252"/><ellipse cx="25" cy="18" rx="4" ry="3" fill="#FF8A80"/></svg>',
+            "window": '<svg viewBox="0 0 100 60" fill="#4FC3F7"><path d="M 8 8 L 50 5 L 92 8 L 92 52 L 50 55 L 8 52 Z" fill="#29B6F6" opacity="0.7" stroke="#01579B" stroke-width="1"/><path d="M 8 30 L 92 30" stroke="#01579B" stroke-width="1.5" opacity="0.6"/></svg>',
+            "mirror": '<svg viewBox="0 0 50 60" fill="#546E7A"><ellipse cx="25" cy="30" rx="22" ry="28" fill="#37474F" stroke="#263238" stroke-width="1"/><ellipse cx="25" cy="30" rx="16" ry="22" fill="#90CAF9" opacity="0.4"/><ellipse cx="20" cy="25" rx="3" ry="4" fill="#E3F2FD"/></svg>',
+            "roof": '<svg viewBox="0 0 150 50" fill="#607D8B"><path d="M 15 40 Q 15 15 40 12 L 110 12 Q 135 15 135 40 Z" fill="#455A64" stroke="#37474F" stroke-width="1"/><path d="M 40 12 L 40 25 M 110 12 L 110 25" stroke="#37474F" stroke-width="1"/></svg>',
+            "grill": '<svg viewBox="0 0 100 60" fill="#212121"><rect x="12" y="12" width="76" height="36" rx="4" fill="#424242" stroke="#212121" stroke-width="1"/><line x1="22" y1="18" x2="22" y2="42" stroke="#757575" stroke-width="4"/><line x1="38" y1="18" x2="38" y2="42" stroke="#757575" stroke-width="4"/><line x1="54" y1="18" x2="54" y2="42" stroke="#757575" stroke-width="4"/><line x1="70" y1="18" x2="70" y2="42" stroke="#757575" stroke-width="4"/><line x1="86" y1="18" x2="86" y2="42" stroke="#757575" stroke-width="4"/></svg>',
+            "trunk": '<svg viewBox="0 0 120 80" fill="#37474F"><path d="M 15 15 L 105 15 L 105 65 L 15 65 Z" fill="#455A64" stroke="#263238" stroke-width="2" rx="6"/><rect x="25" y="45" width="70" height="4" fill="#263238" rx="1"/><circle cx="95" cy="35" r="4" fill="#78909C"/></svg>',
+            "fender-front": '<svg viewBox="0 0 80 100" fill="#546E7A"><path d="M 15 20 Q 35 15 60 25 L 60 85 Q 35 90 15 80 Z" fill="#607D8B" stroke="#455A64" stroke-width="2"/><ellipse cx="40" cy="55" rx="20" ry="8" fill="#78909C" opacity="0.3"/></svg>',
+            "fender-back": '<svg viewBox="0 0 80 100" fill="#546E7A"><path d="M 65 20 Q 45 15 20 25 L 20 85 Q 45 90 65 80 Z" fill="#607D8B" stroke="#455A64" stroke-width="2"/><ellipse cx="40" cy="55" rx="20" ry="8" fill="#78909C" opacity="0.3"/></svg>',
+            "spoiler": '<svg viewBox="0 0 150 40" fill="#212121"><path d="M 15 30 L 15 22 L 135 15 L 135 25 Z" fill="#424242" stroke="#212121" stroke-width="1"/><rect x="15" y="22" width="120" height="12" fill="#212121" stroke="#424242" stroke-width="1"/><rect x="10" y="30" width="130" height="5" fill="#37474F"/></svg>',
+            "antenna": '<svg viewBox="0 0 20 100" fill="#757575"><line x1="10" y1="8" x2="10" y2="85" stroke="#424242" stroke-width="3" stroke-linecap="round"/><circle cx="10" cy="8" r="6" fill="#9E9E9E"/><circle cx="10" cy="85" r="4" fill="#BDBDBD"/></svg>',
+            "exhaust": '<svg viewBox="0 0 80 40" fill="#616161"><ellipse cx="40" cy="25" rx="32" ry="12" fill="#424242" stroke="#212121" stroke-width="1"/><ellipse cx="40" cy="20" rx="25" ry="8" fill="#212121"/><ellipse cx="40" cy="15" rx="18" ry="5" fill="#37474F"/></svg>',
+            "logo": '<svg viewBox="0 0 60 60" fill="#1976D2"><circle cx="30" cy="30" r="26" fill="#2196F3" stroke="#0D47A1" stroke-width="2"/><circle cx="30" cy="30" r="20" fill="#BBDEFB"/><path d="M 20 25 L 30 35 L 40 25" stroke="#0D47A1" stroke-width="3" fill="none" stroke-linecap="round"/></svg>'
+        };
+
+        const levels = [
+            {
+                brand: "Volkswagen Golf",
+                modelFile: "models/vw_golf.ply", // Zmiana na .ply dla Three.js
+                color: 0x2A6EBB,
+                parts: [
+                    { id: "mask", name: "Maska", x: 42, y: 20, w: 16, h: 12, icon: "mask" },
+                    { id: "door-fl", name: "Drzwi przednie L", x: 28, y: 32, w: 10, h: 22, icon: "door-front" },
+                    { id: "door-fr", name: "Drzwi przednie P", x: 62, y: 32, w: 10, h: 22, icon: "door-front" },
+                    { id: "door-bl", name: "Drzwi tylne L", x: 38, y: 32, w: 10, h: 22, icon: "door-back" },
+                    { id: "door-br", name: "Drzwi tylne P", x: 52, y: 32, w: 10, h: 22, icon: "door-back" },
+                    { id: "wheel-fl", name: "Koło przednie L", x: 25, y: 58, w: 10, h: 10, icon: "wheel" },
+                    { id: "wheel-fr", name: "Koło przednie P", x: 65, y: 58, w: 10, h: 10, icon: "wheel" },
+                    { id: "wheel-bl", name: "Koło tylne L", x: 35, y: 58, w: 10, h: 10, icon: "wheel" },
+                    { id: "wheel-br", name: "Koło tylne P", x: 55, y: 58, w: 10, h: 10, icon: "wheel" },
+                    { id: "bumper-f", name: "Zderzak przedni", x: 40, y: 10, w: 20, h: 8, icon: "bumper-front" },
+                    { id: "bumper-b", name: "Zderzak tylny", x: 40, y: 72, w: 20, h: 8, icon: "bumper-back" },
+                    { id: "light-fl", name: "Reflektor L", x: 32, y: 18, w: 8, h: 6, icon: "headlight" },
+                    { id: "light-fr", name: "Reflektor P", x: 60, y: 18, w: 8, h: 6, icon: "headlight" },
+                    { id: "light-bl", name: "Lampa tylna L", x: 38, y: 74, w: 6, h: 5, icon: "taillight" },
+                    { id: "light-br", name: "Lampa tylna P", x: 56, y: 74, w: 6, h: 5, icon: "taillight" },
+                    { id: "window-f", name: "Szyba przednia", x: 42, y: 24, w: 16, h: 8, icon: "window" },
+                    { id: "trunk", name: "Bagażnik", x: 42, y: 64, w: 16, h: 10, icon: "trunk" },
+                    { id: "mirror-l", name: "Lusterko L", x: 24, y: 36, w: 4, h: 6, icon: "mirror" },
+                    { id: "spoiler", name: "Spoiler", x: 40, y: 72, w: 20, h: 5, icon: "spoiler" },
+                    { id: "roof", name: "Dach", x: 38, y: 32, w: 24, h: 10, icon: "roof" }
+                ]
+            },
+            {
+                brand: "Ford Focus",
+                modelFile: "models/ford_focus.ply",
+                color: 0x1E4A75,
+                parts: [
+                    { id: "mask", name: "Maska", x: 42, y: 20, w: 16, h: 12, icon: "mask" },
+                    { id: "door-fl", name: "Drzwi przednie L", x: 28, y: 32, w: 10, h: 22, icon: "door-front" },
+                    { id: "door-fr", name: "Drzwi przednie P", x: 62, y: 32, w: 10, h: 22, icon: "door-front" },
+                    { id: "door-bl", name: "Drzwi tylne L", x: 38, y: 32, w: 10, h: 22, icon: "door-back" },
+                    { id: "door-br", name: "Drzwi tylne P", x: 52, y: 32, w: 10, h: 22, icon: "door-back" },
+                    { id: "fender-fl", name: "Błotnik przedni L", x: 24, y: 50, w: 8, h: 12, icon: "fender-front" },
+                    { id: "fender-fr", name: "Błotnik przedni P", x: 68, y: 50, w: 8, h: 12, icon: "fender-front" },
+                    { id: "fender-bl", name: "Błotnik tylny L", x: 34, y: 50, w: 8, h: 12, icon: "fender-back" },
+                    { id: "fender-br", name: "Błotnik tylny P", x: 58, y: 50, w: 8, h: 12, icon: "fender-back" },
+                    { id: "wheel-fl", name: "Koło przednie L", x: 25, y: 58, w: 10, h: 10, icon: "wheel" },
+                    { id: "wheel-fr", name: "Koło przednie P", x: 65, y: 58, w: 10, h: 10, icon: "wheel" },
+                    { id: "wheel-bl", name: "Koło tylne L", x: 35, y: 58, w: 10, h: 10, icon: "wheel" },
+                    { id: "wheel-br", name: "Koło tylne P", x: 55, y: 58, w: 10, h: 10, icon: "wheel" },
+                    { id: "bumper-f", name: "Zderzak przedni", x: 40, y: 10, w: 20, h: 8, icon: "bumper-front" },
+                    { id: "bumper-b", name: "Zderzak tylny", x: 40, y: 72, w: 20, h: 8, icon: "bumper-back" },
+                    { id: "light-fl", name: "Reflektor L", x: 32, y: 18, w: 8, h: 6, icon: "headlight" },
+                    { id: "light-fr", name: "Reflektor P", x: 60, y: 18, w: 8, h: 6, icon: "headlight" },
+                    { id: "window-f", name: "Szyba przednia", x: 42, y: 24, w: 16, h: 8, icon: "window" },
+                    { id: "antenna", name: "Antena", x: 48, y: 30, w: 3, h: 8, icon: "antenna" },
+                    { id: "roof", name: "Dach", x: 38, y: 32, w: 24, h: 10, icon: "roof" }
+                ]
+            }
+        ];
+
+        // Sylwetka samochodu SVG
+        const carSilhouette = `
+            <svg viewBox="0 0 100 100" class="car-silhouette">
+                <defs>
+                    <filter id="shadow">
+                        <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                        <feOffset dx="0" dy="2" result="offsetblur"/>
+                        <feComponentTransfer>
+                            <feFuncA type="linear" slope="0.3"/>
+                        </feComponentTransfer>
+                        <feMerge>
+                            <feMergeNode/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <linearGradient id="carGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="rgba(255,255,255,0.1)" />
+                        <stop offset="100%" stop-color="rgba(255,255,255,0.05)" />
+                    </linearGradient>
+                </defs>
+                
+                <!-- Karoseria samochodu -->
+                <path d="M 18 52 
+                         C 20 38, 28 30, 40 28 
+                         L 60 28 
+                         C 72 30, 80 38, 82 52 
+                         L 82 68 
+                         C 80 72, 72 75, 60 76 
+                         L 40 76 
+                         C 28 75, 20 72, 18 68 
+                         Z" 
+                      fill="url(#carGradient)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" filter="url(#shadow)"/>
+                
+                <!-- Szyby -->
+                <path d="M 30 32 
+                         C 32 30, 38 29, 42 30 
+                         L 42 38 
+                         L 30 38 
+                         Z" 
+                      fill="rgba(100,181,246,0.25)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
+                <path d="M 58 32 
+                         C 62 30, 68 29, 70 32 
+                         L 70 38 
+                         L 58 38 
+                         Z" 
+                      fill="rgba(100,181,246,0.25)" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
+                
+                <!-- Koła (miejsca) -->
+                <ellipse cx="28" cy="68" rx="9" ry="6" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+                <ellipse cx="72" cy="68" rx="9" ry="6" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+                <ellipse cx="38" cy="68" rx="9" ry="6" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+                <ellipse cx="62" cy="68" rx="9" ry="6" fill="rgba(0,0,0,0.2)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+            </svg>
+        `;
+
+        // Zmienne Three.js
+        let scene, camera, renderer, controls, currentModel = null;
+        let isRotating = false;
+
+        let currentLevel = 0;
+        let placedParts = 0;
+        let totalParts = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let draggedElement = null;
+        let draggedPartId = null;
+        let deferredPrompt = null;
+
+        const partsContainer = document.getElementById('parts-container');
+        const carOutline = document.getElementById('car-outline');
+        const currentLevelElement = document.getElementById('current-level');
+        const carBrandElement = document.getElementById('car-brand');
+        const progressElement = document.getElementById('progress');
+        const resetButton = document.getElementById('reset-btn');
+        const hintButton = document.getElementById('hint-btn');
+        const nextButton = document.getElementById('next-btn');
+        const completedMessage = document.getElementById('completed-message');
+        const completedCarElement = document.getElementById('completed-car');
+        const nextLevelButton = document.getElementById('next-level-btn');
+        const close3DButton = document.getElementById('close-3d-btn');
+        const modelContainer = document.getElementById('model-container');
+        const modelPlaceholder = document.getElementById('model-placeholder');
+        const loadingProgress = document.getElementById('loading-progress');
+        const installPrompt = document.getElementById('install-prompt');
+        const installButton = document.getElementById('install-btn');
+        const dismissInstall = document.getElementById('dismiss-install');
+
+        // Kontrolki modelu 3D
+        const rotateModelBtn = document.getElementById('rotate-model');
+        const zoomInBtn = document.getElementById('zoom-in');
+        const zoomOutBtn = document.getElementById('zoom-out');
+        const resetViewBtn = document.getElementById('reset-view');
+
+        function initGame() {
+            loadLevel(currentLevel);
+            setupEventListeners();
+            setupPWA();
+            initThreeJS();
+        }
+
+        function initThreeJS() {
+            // Inicjalizacja sceny Three.js
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+            
+            // Kamera
+            camera = new THREE.PerspectiveCamera(75, modelContainer.clientWidth / modelContainer.clientHeight, 0.1, 1000);
+            camera.position.z = 5;
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(modelContainer.clientWidth, modelContainer.clientHeight);
+            renderer.setClearColor(0x000000, 0);
+            modelContainer.appendChild(renderer.domElement);
+            
+            // Oświetlenie
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // Kontrolki orbity
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 2;
+            controls.maxDistance = 10;
+            controls.maxPolarAngle = Math.PI;
+            
+            // Animacja
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            // Responsywność
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            if (camera && renderer) {
+                camera.aspect = modelContainer.clientWidth / modelContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(modelContainer.clientWidth, modelContainer.clientHeight);
+            }
+        }
+
+        // Prosty loader PLG (Polygon File Format)
+        class PLGLoader {
+            load(url, onLoad, onProgress, onError) {
+                const loader = new THREE.FileLoader();
+                loader.load(url, (text) => {
+                    try {
+                        const model = this.parse(text);
+                        onLoad(model);
+                    } catch (error) {
+                        if (onError) onError(error);
+                        console.error('Error parsing PLG file:', error);
+                        // Fallback: utwórz prosty model samochodu
+                        this.createFallbackModel().then(onLoad);
+                    }
+                }, onProgress, onError);
+            }
+
+            parse(text) {
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                const vertices = [];
+                const faces = [];
+                const colors = [];
+                
+                for (const line of lines) {
+                    const parts = line.trim().split(/\s+/);
+                    
+                    if (parts[0] === 'vertex') {
+                        // vertex x y z [r g b]
+                        vertices.push(new THREE.Vector3(
+                            parseFloat(parts[1]),
+                            parseFloat(parts[2]), 
+                            parseFloat(parts[3])
+                        ));
+                        if (parts.length >= 7) {
+                            colors.push(new THREE.Color(
+                                parseFloat(parts[4]),
+                                parseFloat(parts[5]),
+                                parseFloat(parts[6])
+                            ));
+                        }
+                    } else if (parts[0] === 'face') {
+                        // face v1 v2 v3 ...
+                        const faceVertices = parts.slice(1).map(idx => parseInt(idx));
+                        faces.push(faceVertices);
+                    }
+                }
+                
+                const geometry = new THREE.BufferGeometry();
+                const positions = [];
+                const indices = [];
+                
+                // Konwersja do formatu Three.js
+                vertices.forEach(vertex => {
+                    positions.push(vertex.x, vertex.y, vertex.z);
+                });
+                
+                faces.forEach(face => {
+                    for (let i = 1; i < face.length - 1; i++) {
+                        indices.push(face[0], face[i], face[i + 1]);
+                    }
+                });
+                
+                geometry.setIndex(indices);
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                geometry.computeVertexNormals();
+                
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: levels[currentLevel].color || 0x2A6EBB,
+                    shininess: 30,
+                    side: THREE.DoubleSide
+                });
+                
+                return new THREE.Mesh(geometry, material);
+            }
+
+            createFallbackModel() {
+                return new Promise((resolve) => {
+                    // Utwórz prosty model samochodu jako fallback
+                    const group = new THREE.Group();
+                    
+                    // Karoseria
+                    const bodyGeometry = new THREE.BoxGeometry(3, 1, 1.5);
+                    const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                        color: levels[currentLevel].color || 0x2A6EBB 
+                    });
+                    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+                    group.add(body);
+                    
+                    // Kabina
+                    const cabinGeometry = new THREE.BoxGeometry(1.5, 0.8, 1.6);
+                    const cabinMaterial = new THREE.MeshPhongMaterial({ 
+                        color: 0x1a2a6c,
+                        transparent: true,
+                        opacity: 0.7
+                    });
+                    const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
+                    cabin.position.y = 0.4;
+                    cabin.position.z = 0.1;
+                    group.add(cabin);
+                    
+                    // Koła
+                    const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+                    const wheelMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+                    
+                    const positions = [
+                        [-1, -0.6, 0.8], [1, -0.6, 0.8],
+                        [-1, -0.6, -0.8], [1, -0.6, -0.8]
+                    ];
+                    
+                    positions.forEach(pos => {
+                        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+                        wheel.position.set(pos[0], pos[1], pos[2]);
+                        wheel.rotation.z = Math.PI / 2;
+                        group.add(wheel);
+                    });
+                    
+                    resolve(group);
+                });
+            }
+        }
+
+        function load3DModel() {
+            const level = levels[currentLevel];
+            modelPlaceholder.textContent = `Ładowanie modelu 3D: ${level.brand}...`;
+            loadingProgress.style.width = '0%';
+            
+            // Wyczyść poprzedni model
+            if (currentModel) {
+                scene.remove(currentModel);
+            }
+            
+            const loader = new PLGLoader();
+            
+            // Symulacja postępu ładowania
+            const progressInterval = setInterval(() => {
+                const currentWidth = parseInt(loadingProgress.style.width) || 0;
+                if (currentWidth < 90) {
+                    loadingProgress.style.width = (currentWidth + 10) + '%';
+                }
+            }, 200);
+            
+            loader.load(
+                level.modelFile,
+                (model) => {
+                    clearInterval(progressInterval);
+                    loadingProgress.style.width = '100%';
+                    
+                    currentModel = model;
+                    scene.add(model);
+                    
+                    // Ustawienie pozycji i skali
+                    model.position.set(0, 0, 0);
+                    model.scale.set(0.5, 0.5, 0.5);
+                    
+                    // Wyśrodkuj model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+                    
+                    controls.reset();
+                    
+                    setTimeout(() => {
+                        modelPlaceholder.style.display = 'none';
+                    }, 500);
+                },
+                (progress) => {
+                    // Aktualny postęp ładowania
+                    if (progress.lengthComputable) {
+                        const percent = (progress.loaded / progress.total) * 100;
+                        loadingProgress.style.width = percent + '%';
+                    }
+                },
+                (error) => {
+                    clearInterval(progressInterval);
+                    console.error('Error loading 3D model:', error);
+                    modelPlaceholder.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 3rem; margin-bottom: 10px;">🚗</div>
+                            <div>Model 3D: ${level.brand}</div>
+                            <div style="font-size: 0.8rem; margin-top: 10px; opacity: 0.7;">
+                                (Model zastępczy - plik nie znaleziony)
+                            </div>
+                        </div>
+                    `;
+                }
+            );
+        }
+
+        function setupModelControls() {
+            rotateModelBtn.addEventListener('click', () => {
+                isRotating = !isRotating;
+                rotateModelBtn.textContent = isRotating ? '⏸️' : '↻';
+                rotateModelBtn.title = isRotating ? 'Zatrzymaj obrót' : 'Obróć';
+            });
+            
+            zoomInBtn.addEventListener('click', () => {
+                camera.position.multiplyScalar(0.9);
+            });
+            
+            zoomOutBtn.addEventListener('click', () => {
+                camera.position.multiplyScalar(1.1);
+            });
+            
+            resetViewBtn.addEventListener('click', () => {
+                controls.reset();
+                camera.position.set(0, 0, 5);
+            });
+        }
+
+        // Pozostałe funkcje gry (loadLevel, setupEventListeners, etc.) pozostają bez zmian
+        // ... (tutaj wstaw pozostały kod gry z poprzedniej wersji)
+
+        function loadLevel(levelIndex) {
+            const level = levels[levelIndex];
+            currentLevel = levelIndex;
+            placedParts = 0;
+            totalParts = level.parts.length;
+            
+            currentLevelElement.textContent = levelIndex + 1;
+            carBrandElement.textContent = level.brand;
+            progressElement.style.width = '0%';
+            nextButton.disabled = true;
+            
+            partsContainer.innerHTML = '';
+            carOutline.innerHTML = carSilhouette;
+            
+            // Utwórz części do przeciągania
+            level.parts.forEach(part => {
+                const partElement = document.createElement('div');
+                partElement.className = 'part';
+                partElement.dataset.partId = part.id;
+                
+                partElement.innerHTML = `
+                    <div class="part-icon">${partIcons[part.icon]}</div>
+                    <div class="part-name">${part.name}</div>
+                `;
+                
+                partsContainer.appendChild(partElement);
+            });
+            
+            // Utwórz strefy upuszczania
+            level.parts.forEach(part => {
+                const dropZone = document.createElement('div');
+                dropZone.className = 'drop-zone';
+                dropZone.dataset.partId = part.id;
+                dropZone.style.left = `${part.x}%`;
+                dropZone.style.top = `${part.y}%`;
+                dropZone.style.width = `${part.w}%`;
+                dropZone.style.height = `${part.h}%`;
+                
+                carOutline.appendChild(dropZone);
+            });
+        }
+
+        function setupEventListeners() {
+            // Touch events dla części
+            partsContainer.addEventListener('touchstart', handleTouchStart, { passive: false });
+            document.addEventListener('touchmove', handleTouchMove, { passive: false });
+            document.addEventListener('touchend', handleTouchEnd, { passive: false });
+            
+            // Mouse events dla desktopa
+            partsContainer.addEventListener('mousedown', handleMouseDown);
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            
+            resetButton.addEventListener('click', () => loadLevel(currentLevel));
+            hintButton.addEventListener('click', showHint);
+            nextButton.addEventListener('click', nextLevel);
+            nextLevelButton.addEventListener('click', nextLevel);
+            close3DButton.addEventListener('click', () => {
+                completedMessage.classList.remove('show');
+                modelPlaceholder.style.display = 'flex';
+                isRotating = false;
+                rotateModelBtn.textContent = '↻';
+            });
+            
+            // PWA installation
+            installButton.addEventListener('click', installPWA);
+            dismissInstall.addEventListener('click', () => installPrompt.classList.add('hidden'));
+            
+            // Kontrolki modelu 3D
+            setupModelControls();
+        }
+
+        function setupPWA() {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installPrompt.classList.remove('hidden');
+            });
+
+            window.addEventListener('appinstalled', () => {
+                installPrompt.classList.add('hidden');
+                deferredPrompt = null;
+            });
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').then(() => {
+                    console.log('Service Worker zarejestrowany');
+                }).catch(err => {
+                    console.log('Service Worker registration failed:', err);
+                });
+            }
+        }
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                    installPrompt.classList.add('hidden');
+                });
+            }
+        }
+
+        // Pozostałe funkcje obsługi przeciągania i upuszczania...
+        function handleTouchStart(e) {
+            const part = e.target.closest('.part');
+            if (!part || part.classList.contains('placed')) return;
+            
+            e.preventDefault();
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            
+            startDrag(part, touch.clientX, touch.clientY);
+        }
+
+        function handleTouchMove(e) {
+            if (!draggedElement) return;
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            moveDrag(touch.clientX, touch.clientY);
+        }
+
+        function handleTouchEnd(e) {
+            if (!draggedElement) return;
+            e.preventDefault();
+            
+            const touch = e.changedTouches[0];
+            endDrag(touch.clientX, touch.clientY);
+        }
+
+        function handleMouseDown(e) {
+            const part = e.target.closest('.part');
+            if (!part || part.classList.contains('placed')) return;
+            
+            e.preventDefault();
+            startDrag(part, e.clientX, e.clientY);
+        }
+
+        function handleMouseMove(e) {
+            if (!draggedElement) return;
+            e.preventDefault();
+            moveDrag(e.clientX, e.clientY);
+        }
+
+        function handleMouseUp(e) {
+            if (!draggedElement) return;
+            e.preventDefault();
+            endDrag(e.clientX, e.clientY);
+        }
+
+        function startDrag(part, x, y) {
+            draggedPartId = part.dataset.partId;
+            part.classList.add('dragging');
+            
+            draggedElement = part.cloneNode(true);
+            draggedElement.className = 'part dragging-part';
+            draggedElement.style.position = 'fixed';
+            draggedElement.style.width = part.offsetWidth + 'px';
+            draggedElement.style.height = part.offsetHeight + 'px';
+            draggedElement.style.left = (x - part.offsetWidth / 2) + 'px';
+            draggedElement.style.top = (y - part.offsetHeight / 2) + 'px';
+            draggedElement.style.pointerEvents = 'none';
+            document.body.appendChild(draggedElement);
+        }
+
+        function moveDrag(x, y) {
+            if (!draggedElement) return;
+            
+            draggedElement.style.left = (x - draggedElement.offsetWidth / 2) + 'px';
+            draggedElement.style.top = (y - draggedElement.offsetHeight / 2) + 'px';
+            
+            const dropZones = document.querySelectorAll('.drop-zone');
+            dropZones.forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    if (zone.dataset.partId === draggedPartId) {
+                        zone.classList.add('highlight');
+                    }
+                } else {
+                    zone.classList.remove('highlight');
+                }
+            });
+        }
+
+        function endDrag(x, y) {
+            if (!draggedElement) return;
+            
+            const dropZones = document.querySelectorAll('.drop-zone');
+            let placed = false;
+            
+            dropZones.forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    if (zone.dataset.partId === draggedPartId && !zone.classList.contains('filled')) {
+                        zone.classList.add('filled');
+                        zone.classList.remove('highlight');
+                        
+                        const level = levels[currentLevel];
+                        const part = level.parts.find(p => p.id === draggedPartId);
+                        zone.innerHTML = partIcons[part.icon];
+                        
+                        const originalPart = partsContainer.querySelector(`[data-part-id="${draggedPartId}"]`);
+                        originalPart.classList.add('placed');
+                        
+                        placedParts++;
+                        updateProgress();
+                        placed = true;
+                    }
+                }
+                zone.classList.remove('highlight');
+            });
+            
+            if (draggedElement.parentNode) {
+                draggedElement.parentNode.removeChild(draggedElement);
+            }
+            
+            const originalPart = partsContainer.querySelector(`[data-part-id="${draggedPartId}"]`);
+            if (originalPart) {
+                originalPart.classList.remove('dragging');
+            }
+            
+            draggedElement = null;
+            draggedPartId = null;
+        }
+
+        function updateProgress() {
+            const progress = (placedParts / totalParts) * 100;
+            progressElement.style.width = `${progress}%`;
+            
+            if (placedParts === totalParts) {
+                setTimeout(() => {
+                    completedCarElement.textContent = levels[currentLevel].brand;
+                    load3DModel();
+                    completedMessage.classList.add('show');
+                    nextButton.disabled = false;
+                }, 500);
+            }
+        }
+
+        function showHint() {
+            const unplacedParts = Array.from(partsContainer.querySelectorAll('.part:not(.placed)'));
+            if (unplacedParts.length === 0) return;
+            
+            const randomPart = unplacedParts[Math.floor(Math.random() * unplacedParts.length)];
+            const partId = randomPart.dataset.partId;
+            const zone = carOutline.querySelector(`.drop-zone[data-part-id="${partId}"]`);
+            
+            if (zone) {
+                zone.classList.add('hint');
+                setTimeout(() => zone.classList.remove('hint'), 2000);
+            }
+        }
+
+        function nextLevel() {
+            if (currentLevel < levels.length - 1) {
+                currentLevel++;
+                loadLevel(currentLevel);
+                completedMessage.classList.remove('show');
+                modelPlaceholder.style.display = 'flex';
+            } else {
+                completedMessage.querySelector('h2').textContent = '🎊 Brawo!';
+                completedMessage.querySelector('p').textContent = 'Ukończyłeś wszystkie poziomy!';
+                nextLevelButton.textContent = '🔄 Zagraj od początku';
+                nextLevelButton.onclick = () => {
+                    currentLevel = 0;
+                    loadLevel(currentLevel);
+                    completedMessage.classList.remove('show');
+                    modelPlaceholder.style.display = 'flex';
+                    nextLevelButton.onclick = null;
+                    setupEventListeners();
+                };
+            }
+        }
+
+        window.addEventListener('beforeunload', () => {
+            const gameData = {
+                currentLevel: currentLevel,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('carAssemblyGame', JSON.stringify(gameData));
+        });
+
+        window.addEventListener('load', () => {
+            const savedData = localStorage.getItem('carAssemblyGame');
+            if (savedData) {
+                const gameData = JSON.parse(savedData);
+                // Możesz dodać logikę do wczytania zapisanego poziomu
+            }
+            initGame();
+        });
+
+        // Automatyczny obrót modelu
+        function animateModel() {
+            if (isRotating && currentModel) {
+                currentModel.rotation.y += 0.01;
+            }
+            requestAnimationFrame(animateModel);
+        }
+        animateModel();
+    </script>
+</body>
+</html>

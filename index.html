@@ -416,6 +416,13 @@
             height: 100%;
             opacity: 0.3;
         }
+        
+        .error-message {
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -635,10 +642,11 @@
             `
         };
 
+        // POPRAWIONE LINKI DO MODELI 3D Z GOOGLE DRIVE
         const levels = [
             {
                 brand: "Volkswagen Golf",
-                modelFile: "https://drive.google.com/file/d/1vKJsDruzDZm2GJM-w-3Cxq689XBCv4gg&export=download",
+                modelFile: "https://drive.google.com/uc?id=1vKJsDruzDZm2GJM-w-3Cxq689XBCv4gg&export=download",
                 color: 0x2A6EBB,
                 specificParts: {
                     "grill": `
@@ -705,7 +713,7 @@
             },
             {
                 brand: "Ford Focus",
-                modelFile: "https://drive.google.com/file/d/18qR9IUYEnggZwniXDSD8KXB_NL-QMqYO&export=download",
+                modelFile: "https://drive.google.com/uc?id=18qR9IUYEnggZwniXDSD8KXB_NL-QMqYO&export=download", 
                 color: 0x1E4A75,
                 specificParts: {
                     "grill": `
@@ -761,7 +769,7 @@
             },
             {
                 brand: "BMW 3",
-                modelFile: "https://drive.google.com/file/d/15eZWUMknxKkAiAbKtsQAEiO68mmna5zN&export=download",
+                modelFile: "https://drive.google.com/uc?id=15eZWUMknxKkAiAbKtsQAEiO68mmna5zN&export=download",
                 color: 0x1a1a1a,
                 specificParts: {
                     "grill": `
@@ -955,8 +963,9 @@
             controls.maxDistance = 10;
             controls.maxPolarAngle = Math.PI;
             
-            // GLTF Loader
+            // GLTF Loader z obsługą CORS
             gltfLoader = new THREE.GLTFLoader();
+            gltfLoader.setCrossOrigin('anonymous'); // WAŻNE dla Google Drive
             
             // Animacja
             function animate() {
@@ -1013,6 +1022,7 @@
             };
         }
 
+        // ULEPSZONA FUNKCJA ŁADOWANIA MODELI Z GOOGLE DRIVE
         function load3DModel() {
             const level = levels[currentLevel];
             modelPlaceholder.innerHTML = `Ładowanie modelu 3D: ${level.brand}...<div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>`;
@@ -1024,20 +1034,29 @@
                 currentModel = null;
             }
             
+            // Timeout dla wolnych połączeń
+            const loadTimeout = setTimeout(() => {
+                console.warn('Timeout ładowania modelu');
+                handleModelError(level, 'Timeout - zbyt wolne połączenie');
+            }, 30000);
+            
             // Symulacja postępu ładowania
             const progressInterval = setInterval(() => {
                 const currentWidth = parseInt(loadingProgress.style.width) || 0;
-                if (currentWidth < 80) {
+                if (currentWidth < 70) {
                     loadingProgress.style.width = (currentWidth + 10) + '%';
                 }
-            }, 200);
+            }, 300);
             
-            // Ładowanie modelu GLB
+            // Ładowanie modelu GLB z Google Drive
             gltfLoader.load(
                 level.modelFile,
                 (gltf) => {
+                    clearTimeout(loadTimeout);
                     clearInterval(progressInterval);
                     loadingProgress.style.width = '100%';
+                    
+                    console.log('Model załadowany pomyślnie:', level.brand);
                     
                     currentModel = gltf.scene;
                     
@@ -1083,11 +1102,37 @@
                     }
                 },
                 (error) => {
+                    clearTimeout(loadTimeout);
                     clearInterval(progressInterval);
-                    console.error('Błąd ładowania modelu 3D:', error);
-                    createFallbackModel(level);
+                    console.error('Błąd ładowania modelu 3D z Google Drive:', error);
+                    handleModelError(level, error.message);
                 }
             );
+        }
+
+        function handleModelError(level, errorMessage) {
+            modelPlaceholder.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
+                    <div>Model 3D: ${level.brand}</div>
+                    <div class="error-message">
+                        Problem z ładowaniem modelu<br>
+                        <small>${errorMessage}</small>
+                    </div>
+                    <div style="font-size: 0.8rem; margin-top: 15px; opacity: 0.7;">
+                        (Ładuję model zastępczy...)
+                    </div>
+                </div>
+            `;
+            loadingProgress.style.width = '100%';
+            
+            // Opóźnienie dla lepszego UX
+            setTimeout(() => {
+                createFallbackModel(level);
+                setTimeout(() => {
+                    modelPlaceholder.style.display = 'none';
+                }, 1000);
+            }, 2000);
         }
 
         function createFallbackModel(level) {
@@ -1119,20 +1164,6 @@
             
             currentModel = group;
             scene.add(currentModel);
-            
-            loadingProgress.style.width = '100%';
-            
-            setTimeout(() => {
-                modelPlaceholder.innerHTML = `
-                    <div style="text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 10px;">🚗</div>
-                        <div>Model 3D: ${level.brand}</div>
-                        <div style="font-size: 0.8rem; margin-top: 10px; opacity: 0.7;">
-                            (Model zastępczy z charakterystyką marki)
-                        </div>
-                    </div>
-                `;
-            }, 500);
         }
 
         function getBodyShape(brand) {

@@ -2,489 +2,414 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a192f">
-    <meta name="description" content="Profesjonalny montaż samochodu - realistyczne części i konstrukcja pojazdu">
-    <title>Auto Builder Pro - Realistyczny montaż samochodu</title>
-    
-    <!-- Biblioteki Three.js -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
-            }
-        }
-    </script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Auto Assembly Pro - Realistyczny montaż samochodu</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
+            background: linear-gradient(145deg, #0c1a2b 0%, #0a111f 100%);
             font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(145deg, #0a192f 0%, #0d2b3e 100%);
-            color: white;
-            overflow: hidden;
-            height: 100vh;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: pan-x pan-y;
         }
 
-        /* Nowoczesny, przemysłowy interfejs */
-        .app-container {
-            width: 100%;
-            height: 100%;
+        /* Główna struktura */
+        .game-wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(2px);
+            gap: 12px;
+            min-height: 100vh;
         }
 
-        .top-bar {
-            background: rgba(10, 25, 47, 0.85);
+        /* Header */
+        .game-header {
+            background: rgba(10, 25, 47, 0.75);
             backdrop-filter: blur(12px);
+            border-radius: 32px;
             padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            border-bottom: 1px solid rgba(100, 200, 255, 0.2);
-            z-index: 10;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255, 200, 80, 0.25);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
         }
-
         h1 {
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #fff, #4a9eff);
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #fff, #4db8ff);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            letter-spacing: 1px;
         }
-
-        .level-badge {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 4px 12px;
+        .badge {
+            background: #00000066;
+            padding: 6px 14px;
             border-radius: 40px;
-            font-size: 0.8rem;
             font-weight: 500;
-            border-left: 3px solid #ffaa00;
+            font-size: 0.85rem;
+            border-left: 3px solid gold;
         }
-
-        .progress-container {
-            background: rgba(0, 0, 0, 0.4);
-            height: 4px;
-            width: 100%;
+        .progress-bar {
+            background: #1e2a3a;
+            border-radius: 12px;
+            height: 6px;
+            overflow: hidden;
+            margin-top: 8px;
         }
-
         .progress-fill {
-            background: linear-gradient(90deg, #4caf50, #8bc34a, #ffd966);
+            background: linear-gradient(90deg, #4caf50, #ffd966);
             width: 0%;
             height: 100%;
             transition: width 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
 
-        .game-layout {
-            flex: 1;
+        /* Dwa główne panele */
+        .game-panels {
             display: flex;
             gap: 12px;
-            padding: 12px;
-            overflow: hidden;
+            flex-wrap: wrap;
         }
-
-        /* Panel części - realistyczny grid */
         .parts-panel {
-            flex: 1;
+            flex: 1.2;
             background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(8px);
-            border-radius: 28px;
-            padding: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            flex-direction: column;
+            backdrop-filter: blur(12px);
+            border-radius: 32px;
+            padding: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-
-        .parts-panel h2 {
-            font-size: 1rem;
-            font-weight: 500;
-            text-align: center;
-            margin-bottom: 12px;
-            letter-spacing: 1px;
-            color: #bbd9ff;
-        }
-
         .parts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
             gap: 12px;
+            max-height: 58vh;
             overflow-y: auto;
             padding: 4px;
         }
-
         .part-card {
-            background: rgba(20, 40, 60, 0.7);
-            backdrop-filter: blur(4px);
-            border-radius: 18px;
+            background: rgba(20, 35, 55, 0.8);
+            border-radius: 20px;
             padding: 10px 6px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
+            text-align: center;
             cursor: grab;
-            transition: all 0.2s ease;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+            border: 1px solid rgba(255,215,0,0.3);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
         }
-
-        .part-card:active {
-            cursor: grabbing;
-        }
-
+        .part-card:active { cursor: grabbing; }
         .part-card.placed {
-            opacity: 0.4;
-            filter: grayscale(0.5);
-            cursor: default;
+            opacity: 0.35;
+            filter: grayscale(0.6);
             pointer-events: none;
             border-color: #4caf50;
         }
+        .part-icon svg { width: 54px; height: 54px; filter: drop-shadow(0 2px 6px black); }
+        .part-name { font-size: 0.65rem; margin-top: 6px; font-weight: 500; background: #00000066; display: inline-block; padding: 2px 8px; border-radius: 20px;}
 
-        .part-icon svg {
-            width: 56px;
-            height: 56px;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
-        }
-
-        .part-name {
-            font-size: 0.65rem;
-            font-weight: 500;
-            background: rgba(0,0,0,0.5);
-            padding: 3px 8px;
-            border-radius: 20px;
-        }
-
-        /* Obszar montażu - realistyczny szkielet */
-        .assembly-area {
-            flex: 1.5;
-            background: rgba(0, 0, 0, 0.35);
-            border-radius: 32px;
+        /* Obszar montażu - SZKIELET SAMOCHODU premium */
+        .assembly-panel {
+            flex: 1.8;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border-radius: 36px;
             padding: 12px;
-            position: relative;
-            border: 1px solid rgba(255, 215, 0, 0.15);
+            border: 1px solid rgba(255, 180, 50, 0.3);
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
         }
-
-        .car-canvas {
+        .car-chassis {
+            width: 100%;
+            aspect-ratio: 1 / 0.65;
+            position: relative;
+            background: radial-gradient(ellipse at 50% 80%, rgba(0,0,0,0.3), transparent);
+            border-radius: 28px;
+        }
+        .skeleton-svg-container {
             width: 100%;
             height: 100%;
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
-
-        .car-skeleton {
+        .skeleton-svg-container svg {
             width: 100%;
             height: 100%;
-            position: relative;
+            display: block;
         }
-
-        /* strefy drop z bardziej realistycznym wyglądem */
         .drop-slot {
             position: absolute;
-            border: 2px dashed rgba(255, 200, 100, 0.5);
-            border-radius: 12px;
-            background: rgba(255, 215, 0, 0.05);
-            transition: all 0.2s;
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .drop-slot.filled {
-            border: 2px solid rgba(76, 175, 80, 0.8);
-            background: rgba(76, 175, 80, 0.15);
-            backdrop-filter: blur(2px);
-        }
-
-        .drop-slot.highlight {
-            background: rgba(255, 210, 0, 0.3);
-            border-color: #ffaa33;
-            transform: scale(1.02);
-            box-shadow: 0 0 12px rgba(255, 170, 0, 0.4);
-        }
-
-        .drop-slot svg {
-            width: 85%;
-            height: 85%;
-            opacity: 0.9;
-        }
-
-        .controls-bar {
-            display: flex;
-            gap: 12px;
-            padding: 12px 20px;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-        }
-
-        button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 60px;
-            background: linear-gradient(135deg, #2c3e66, #1a2a4f);
-            color: white;
-            font-weight: bold;
-            letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(255,215,0,0.05);
+            border: 2px dashed rgba(255,200,100,0.6);
+            pointer-events: none;
+        }
+        .drop-slot.filled {
+            background: rgba(76, 175, 80, 0.25);
+            border: 2px solid rgba(76, 175, 80, 0.9);
+            backdrop-filter: blur(2px);
+        }
+        .drop-slot.highlight {
+            background: rgba(255, 200, 50, 0.4);
+            border-color: #ffaa33;
+            transform: scale(1.02);
+            box-shadow: 0 0 15px gold;
+        }
+        .drop-slot svg {
+            width: 90%;
+            height: 90%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
-        button:active {
-            transform: scale(0.96);
+        /* Przyciski */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            padding: 8px 0;
         }
-
-        button:disabled {
-            opacity: 0.5;
-            transform: none;
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 60px;
+            background: linear-gradient(135deg, #2a3f60, #1a2a44);
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 5px 12px black;
+            border: 1px solid rgba(255,215,0,0.3);
         }
+        button:active { transform: scale(0.96);}
+        button:disabled { opacity: 0.5;}
 
+        /* Modal 3D */
         .modal-3d {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(16px);
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(20px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 2000;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.4s;
+            transition: 0.3s;
         }
-
         .modal-3d.show {
             opacity: 1;
             visibility: visible;
         }
-
-        .modal-content {
-            background: linear-gradient(145deg, #0c1f2e, #07121c);
+        .modal-card {
+            background: linear-gradient(145deg, #0f212f, #07121c);
             width: 90%;
             max-width: 550px;
             border-radius: 48px;
             padding: 20px;
-            border: 1px solid rgba(255,215,0,0.5);
-            box-shadow: 0 30px 40px rgba(0,0,0,0.6);
+            border: 1px solid gold;
+            box-shadow: 0 25px 40px black;
         }
-
         .viewer-3d {
             height: 320px;
-            border-radius: 28px;
-            background: #0a0f1a;
-            margin: 12px 0;
-            position: relative;
+            border-radius: 32px;
+            background: #050a12;
+            margin: 15px 0;
             overflow: hidden;
         }
-
         .drag-clone {
             position: fixed;
             pointer-events: none;
             z-index: 10000;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 10px 20px black);
             transform: scale(1.1);
-            transition: 0.02s linear;
+            transition: none;
         }
-
-        @keyframes pulseDrop {
-            0% { box-shadow: 0 0 0 0 rgba(255,200,0,0.6);}
-            100% { box-shadow: 0 0 0 12px rgba(255,200,0,0);}
+        @keyframes hintPulse {
+            0% { box-shadow: 0 0 0 0 #ffcc44; border-color: #ffaa33; }
+            100% { box-shadow: 0 0 0 12px rgba(255,200,0,0); }
         }
-
-        .hint-animation {
-            animation: pulseDrop 0.8s ease-out;
+        .hint-effect {
+            animation: hintPulse 0.7s ease-out;
+        }
+        @media (max-width: 700px) {
+            .game-panels { flex-direction: column; }
+            .parts-grid { max-height: 35vh; }
+            .part-icon svg { width: 44px; height: 44px; }
         }
     </style>
 </head>
 <body>
-<div class="app-container">
-    <div class="top-bar">
-        <h1>⚙️ AUTO BUILDER PRO</h1>
-        <div class="level-badge"><span id="level-num">1</span>/3 • <span id="car-name">Volkswagen Golf R</span></div>
+<div class="game-wrapper">
+    <div class="game-header">
+        <h1>⚡ CAR ASSEMBLY PRO</h1>
+        <div class="badge"><span id="levelCounter">1</span>/3 • <span id="carModelName">Volkswagen Golf R</span></div>
     </div>
-    <div class="progress-container"><div class="progress-fill" id="global-progress"></div></div>
-    
-    <div class="game-layout">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="game-panels">
         <div class="parts-panel">
-            <h2>🔧 ORYGINALNE CZĘŚCI</h2>
             <div class="parts-grid" id="partsGrid"></div>
         </div>
-
-        <div class="assembly-area">
-            <div class="car-canvas">
-                <div class="car-skeleton" id="carSkeleton"></div>
+        <div class="assembly-panel">
+            <div class="car-chassis" id="carChassis">
+                <div class="skeleton-svg-container" id="skeletonContainer"></div>
             </div>
         </div>
     </div>
-
-    <div class="controls-bar">
-        <button id="resetBtn">🔄 Reset</button>
-        <button id="hintBtn">💡 Podpowiedź</button>
-        <button id="nextLevelBtn" disabled>➡️ Dalej</button>
+    <div class="action-buttons">
+        <button id="resetGameBtn">🔄 Resetuj</button>
+        <button id="hintGameBtn">💡 Podpowiedź</button>
+        <button id="nextGameBtn" disabled>➡️ Następny model</button>
     </div>
 </div>
 
-<div class="modal-3d" id="modal3d">
-    <div class="modal-content">
-        <h3 style="text-align:center">🏆 MONTAŻ UKOŃCZONY: <span id="modalCarName"></span></h3>
+<div class="modal-3d" id="threeModal">
+    <div class="modal-card">
+        <h3 style="text-align:center; color:gold;">🏆 Złożono: <span id="modalCarTitle"></span></h3>
         <div class="viewer-3d" id="threeContainer"></div>
         <div style="display: flex; gap: 12px; margin-top: 16px;">
-            <button id="closeModalBtn" style="background:#2c3e66;">Zamknij</button>
-            <button id="nextModalBtn" style="background:#ffaa33; color:#1a2a4f;">Następny model ➡️</button>
+            <button id="close3dBtn" style="background:#2c3e66;">Zamknij</button>
+            <button id="nextLevel3dBtn" style="background:#ffaa33; color:#1e2a3a;">Następny poziom →</button>
         </div>
     </div>
 </div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+        }
+    }
+</script>
 
 <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     
-    // ======================== REALISTYCZNE IKONY CZĘŚCI (szczegółowe SVG) =======================
-    const realisticParts = {
-        hood: `<svg viewBox="0 0 120 70"><path d="M15,25 L35,10 L85,10 L105,25 L105,55 L85,65 L35,65 L15,55 Z" fill="#1e2f3f" stroke="#4a6a8a" stroke-width="1.5"/><path d="M45,18 L75,18" stroke="#ffaa33" stroke-width="1.5" fill="none"/><path d="M30,35 L90,35" stroke="#748aa3" stroke-width="1" opacity="0.6"/><circle cx="60" cy="45" r="6" fill="#ffaa3344" stroke="#c97e00"/></svg>`,
-        grille: `<svg viewBox="0 0 100 60"><rect x="20" y="15" width="60" height="30" rx="5" fill="#111" stroke="#aaa"/><line x1="28" y1="20" x2="28" y2="40" stroke="#ccc" stroke-width="3"/><line x1="42" y1="20" x2="42" y2="40" stroke="#ccc" stroke-width="3"/><line x1="56" y1="20" x2="56" y2="40" stroke="#ccc" stroke-width="3"/><line x1="70" y1="20" x2="70" y2="40" stroke="#ccc" stroke-width="3"/><circle cx="50" cy="30" r="7" fill="#1e2f3f" stroke="gold"/><path d="M46,28 L50,36 L54,28" stroke="white" fill="none"/></svg>`,
-        doorFront: `<svg viewBox="0 0 90 130"><rect x="10" y="10" width="70" height="110" rx="12" fill="#2c4c6c" stroke="#9bb7d4" stroke-width="1.5"/><rect x="22" y="30" width="46" height="55" rx="8" fill="#aaccff" opacity="0.35"/><circle cx="65" cy="85" r="6" fill="#ffcc66" stroke="#aa8833"/><path d="M18 100 L72 100" stroke="#ccc" stroke-width="2"/><path d="M30,110 L60,110" stroke="#ffaa33"/></svg>`,
-        doorRear: `<svg viewBox="0 0 90 130"><rect x="10" y="10" width="70" height="110" rx="12" fill="#2c4c6c" stroke="#9bb7d4"/><rect x="22" y="30" width="46" height="48" rx="8" fill="#aaccff" opacity="0.35"/><circle cx="30" cy="85" r="6" fill="#ffcc66"/><path d="M18 100 L72 100" stroke="#ccc"/></svg>`,
-        wheel: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="#1f1f1f" stroke="#5a5a5a" stroke-width="3"/><circle cx="50" cy="50" r="32" fill="#2d2d2d"/><circle cx="50" cy="50" r="20" fill="#aaa" stroke="#888" stroke-width="2"/><path d="M50,15 L50,85 M15,50 L85,50 M27,27 L73,73 M27,73 L73,27" stroke="#ccc" stroke-width="2"/><circle cx="50" cy="50" r="7" fill="#ffd966"/></svg>`,
-        bumperFront: `<svg viewBox="0 0 200 60"><path d="M15 35 Q 40 15 100 15 Q 160 15 185 35 L 180 52 Q 120 58 100 58 Q 60 58 20 52 Z" fill="#3a4a5f" stroke="#b0c4de"/><rect x="45" y="28" width="30" height="18" rx="6" fill="#111"/><rect x="125" y="28" width="30" height="18" rx="6" fill="#111"/><path d="M85 42 L115 42" stroke="silver" stroke-width="3"/></svg>`,
-        bumperRear: `<svg viewBox="0 0 200 60"><path d="M15 15 Q 40 5 100 5 Q 160 5 185 15 L 180 45 Q 120 55 100 55 Q 60 55 20 45 Z" fill="#3a4a5f" stroke="#b0c4de"/><rect x="75" y="25" width="50" height="12" rx="4" fill="#252525"/></svg>`,
-        headlight: `<svg viewBox="0 0 80 50"><ellipse cx="40" cy="25" rx="36" ry="22" fill="#111" stroke="#dddddd"/><ellipse cx="40" cy="25" rx="30" ry="18" fill="#ffd966"/><ellipse cx="28" cy="22" rx="12" ry="7" fill="#fffceb"/><ellipse cx="52" cy="22" rx="10" ry="6" fill="#fff"/><path d="M40 12 L40 38" stroke="#aaa" stroke-width="1.5"/></svg>`,
-        taillight: `<svg viewBox="0 0 80 50"><rect x="5" y="6" width="70" height="38" rx="12" fill="#8b0000" stroke="#ff4d4d"/><rect x="12" y="12" width="56" height="26" rx="8" fill="#cc0000"/><circle cx="28" cy="25" r="8" fill="white" opacity="0.7"/><circle cx="54" cy="25" r="8" fill="#ffcc00"/></svg>`,
-        window: `<svg viewBox="0 0 140 60"><path d="M15 15 L 45 5 L 95 5 L 125 15 L 125 50 L 95 55 L 45 55 L 15 50 Z" fill="#6699cc" opacity="0.6" stroke="#bbddff"/><path d="M70 10 L70 52" stroke="#fff" stroke-width="1.5" opacity="0.6"/></svg>`,
-        mirror: `<svg viewBox="0 0 60 70"><ellipse cx="30" cy="35" rx="25" ry="30" fill="#2c3e4e" stroke="#8aa9c9"/><ellipse cx="30" cy="35" rx="18" ry="22" fill="#9ec0e0" opacity="0.5"/><path d="M12 30 L22 23 L22 47 Z" fill="#1e2f3f"/></svg>`,
-        roof: `<svg viewBox="0 0 180 60"><path d="M25 45 Q 30 15 60 12 L 120 12 Q 150 15 155 45 Z" fill="#2c4c6c" stroke="#9bb7d4"/><path d="M60 12 L60 42" stroke="#aaa" stroke-width="1.5"/><path d="M120 12 L120 42" stroke="#aaa" stroke-width="1.5"/></svg>`,
-        spoiler: `<svg viewBox="0 0 160 30"><path d="M10 15 L150 8 L150 18 L10 25 Z" fill="#111" stroke="silver"/><rect x="20" y="18" width="120" height="5" fill="#333"/></svg>`,
-        trunk: `<svg viewBox="0 0 130 70"><path d="M15 20 L65 12 L115 20 L115 58 L65 62 L15 58 Z" fill="#2c4c6c" stroke="#9bb7d4"/><rect x="35" y="42" width="60" height="4" fill="#111"/><circle cx="65" cy="30" r="4" fill="gold"/></svg>`,
-        logo: `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="26" fill="#1a3850" stroke="gold"/><text x="30" y="40" text-anchor="middle" font-size="18" fill="gold" font-weight="bold">VW</text></svg>`
+    // ----------------------------------------------
+    // 1. SUPER REALISTYCZNE IKONY CZĘŚCI (szczegółowe SVG)
+    // ----------------------------------------------
+    const partSVG = {
+        hood: `<svg viewBox="0 0 120 70"><path d="M12,24 L34,8 L86,8 L108,24 L108,58 L86,66 L34,66 L12,58 Z" fill="#1f3142" stroke="#5f8bb3" stroke-width="1.6"/><path d="M42,15 L78,15" stroke="#ffb347" stroke-width="2"/><path d="M24,38 L96,38" stroke="#8da3c0" opacity="0.7"/><ellipse cx="60" cy="46" rx="8" ry="4" fill="#ffaa3344"/></svg>`,
+        grille: `<svg viewBox="0 0 100 60"><rect x="18" y="14" width="64" height="32" rx="6" fill="#0a0a0a" stroke="#d4af37"/><line x1="26" y1="20" x2="26" y2="40" stroke="#b8860b" stroke-width="3.5"/><line x1="40" y1="20" x2="40" y2="40" stroke="#b8860b" stroke-width="3.5"/><line x1="54" y1="20" x2="54" y2="40" stroke="#b8860b" stroke-width="3.5"/><line x1="68" y1="20" x2="68" y2="40" stroke="#b8860b" stroke-width="3.5"/><circle cx="50" cy="30" r="8" fill="#1e2f3f" stroke="gold"/><path d="M46,26 L50,35 L54,26" stroke="white" fill="none"/></svg>`,
+        doorFront: `<svg viewBox="0 0 90 130"><rect x="8" y="8" width="74" height="114" rx="14" fill="#2d4a6e" stroke="#bed0e4" stroke-width="1.5"/><rect x="20" y="28" width="50" height="56" rx="8" fill="#8bb3d4" opacity="0.45"/><circle cx="66" cy="86" r="7" fill="#ffcc66" stroke="#cc9933"/><path d="M16,98 L74,98" stroke="#ccc" stroke-width="2"/><path d="M32,112 L58,112" stroke="#ffaa44"/><path d="M68 110 L74 112" stroke="silver"/></svg>`,
+        doorRear: `<svg viewBox="0 0 90 130"><rect x="8" y="8" width="74" height="114" rx="14" fill="#2d4a6e" stroke="#bed0e4"/><rect x="20" y="28" width="50" height="48" rx="8" fill="#8bb3d4" opacity="0.45"/><circle cx="28" cy="86" r="7" fill="#ffcc66"/><path d="M16 98 L74 98" stroke="#ccc"/></svg>`,
+        wheel: `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="#151515" stroke="#777" stroke-width="2.5"/><circle cx="50" cy="50" r="34" fill="#2a2a2a"/><circle cx="50" cy="50" r="22" fill="#aaa" stroke="#888"/><path d="M50,12 L50,88 M12,50 L88,50 M24,24 L76,76 M24,76 L76,24" stroke="#ccc" stroke-width="2.5"/><circle cx="50" cy="50" r="8" fill="#ffcc44"/><circle cx="50" cy="50" r="3" fill="#333"/></svg>`,
+        bumperFront: `<svg viewBox="0 0 200 60"><path d="M12,34 Q38,16 100,16 Q162,16 188,34 L184,54 Q130,60 100,60 Q50,60 16,54Z" fill="#445566" stroke="#ccaa66"/><rect x="42" y="26" width="32" height="20" rx="6" fill="#111"/><rect x="126" y="26" width="32" height="20" rx="6" fill="#111"/><path d="M80,44 L120,44" stroke="silver" stroke-width="4"/><circle cx="58" cy="38" r="4" fill="gold"/><circle cx="142" cy="38" r="4" fill="gold"/></svg>`,
+        bumperRear: `<svg viewBox="0 0 200 60"><path d="M12,16 Q38,6 100,6 Q162,6 188,16 L184,48 Q130,56 100,56 Q50,56 16,48Z" fill="#445566" stroke="#ccaa66"/><rect x="70" y="22" width="60" height="15" rx="5" fill="#111"/><path d="M90,32 L110,32" stroke="red"/></svg>`,
+        headlight: `<svg viewBox="0 0 80 50"><ellipse cx="40" cy="25" rx="37" ry="23" fill="#111" stroke="#ddeeff"/><ellipse cx="40" cy="25" rx="32" ry="19" fill="#ffde8a"/><ellipse cx="27" cy="21" rx="13" ry="8" fill="#fffcdd"/><ellipse cx="53" cy="21" rx="11" ry="7" fill="#fff9e0"/><path d="M40 12 L40 38" stroke="#aaa" stroke-width="1.5"/><circle cx="40" cy="25" r="4" fill="white"/></svg>`,
+        taillight: `<svg viewBox="0 0 80 50"><rect x="4" y="6" width="72" height="38" rx="14" fill="#7a0000" stroke="#ff7777"/><rect x="12" y="12" width="56" height="26" rx="8" fill="#dc143c"/><circle cx="30" cy="25" r="9" fill="white" opacity="0.8"/><circle cx="56" cy="25" r="9" fill="#ffcc00"/><path d="M18 18 L62 32" stroke="white" stroke-width="1.5" opacity="0.5"/></svg>`,
+        window: `<svg viewBox="0 0 140 60"><path d="M12,14 L44,4 L96,4 L128,14 L128,52 L96,58 L44,58 L12,52Z" fill="#77aaff" opacity="0.55" stroke="#bbddff" stroke-width="1.5"/><path d="M70,8 L70,56" stroke="#fff" stroke-width="2" opacity="0.7"/></svg>`,
+        mirror: `<svg viewBox="0 0 60 70"><ellipse cx="30" cy="35" rx="26" ry="32" fill="#2c3e4e" stroke="#9bb7d4"/><ellipse cx="30" cy="35" rx="19" ry="23" fill="#aac3e0" opacity="0.6"/><path d="M10,28 L20,20 L20,48 Z" fill="#1e2f3f"/><line x1="20" y1="30" x2="12" y2="35" stroke="#888"/></svg>`,
+        roof: `<svg viewBox="0 0 180 60"><path d="M20,44 Q28,12 62,8 L118,8 Q152,12 160,44 Z" fill="#2d4a6e" stroke="#9bb7d4"/><path d="M62,8 L62,42" stroke="#ffcc55" stroke-width="2"/><path d="M118,8 L118,42" stroke="#ffcc55" stroke-width="2"/><path d="M30 38 L150 38" stroke="#aaa"/></svg>`,
+        spoiler: `<svg viewBox="0 0 160 30"><path d="M8,16 L152,6 L152,18 L8,28Z" fill="#1a1a1a" stroke="silver"/><rect x="20" y="19" width="120" height="6" fill="#333"/><path d="M40 14 L120 12" stroke="#ffaa33" stroke-width="2"/></svg>`,
+        trunk: `<svg viewBox="0 0 130 70"><path d="M12,22 L65,10 L118,22 L118,60 L65,66 L12,60Z" fill="#2d4a6e" stroke="#9bb7d4"/><rect x="34" y="44" width="62" height="5" fill="#111"/><circle cx="65" cy="30" r="5" fill="gold"/><path d="M50 48 L80 48" stroke="#ddd"/></svg>`,
+        logo: `<svg viewBox="0 0 60 60"><circle cx="30" cy="30" r="28" fill="#1a3850" stroke="gold" stroke-width="2"/><text x="30" y="41" text-anchor="middle" font-size="20" fill="gold" font-weight="bold">VW</text><circle cx="30" cy="30" r="10" fill="none" stroke="gold" stroke-width="1"/></svg>`
     };
     
-    // Definicje poziomów z realistycznymi detalami
+    // ----------------------------------------------
+    // 2. DANE POZIOMÓW (modele + unikalne szkielety)
+    // ----------------------------------------------
     const levels = [
-        {
-            brand: "Volkswagen Golf R",
-            color: 0x2a6ebb,
-            specificParts: {},
-            parts: [
-                { id: "hood", name: "Maska silnika", x: 42, y: 18, w: 16, h: 12, icon: "hood" },
-                { id: "grille", name: "Atrapa chłodnicy", x: 44, y: 16, w: 12, h: 8, icon: "grille" },
-                { id: "door_fl", name: "Drzwi L przednie", x: 28, y: 32, w: 10, h: 22, icon: "doorFront" },
-                { id: "door_fr", name: "Drzwi P przednie", x: 62, y: 32, w: 10, h: 22, icon: "doorFront" },
-                { id: "door_bl", name: "Drzwi L tylne", x: 38, y: 32, w: 10, h: 22, icon: "doorRear" },
-                { id: "door_br", name: "Drzwi P tylne", x: 52, y: 32, w: 10, h: 22, icon: "doorRear" },
-                { id: "wheel_fl", name: "Koło przód L", x: 25, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_fr", name: "Koło przód P", x: 65, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_bl", name: "Koło tył L", x: 35, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_br", name: "Koło tył P", x: 55, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "bumper_f", name: "Zderzak przedni", x: 40, y: 10, w: 20, h: 8, icon: "bumperFront" },
-                { id: "bumper_b", name: "Zderzak tylny", x: 40, y: 72, w: 20, h: 8, icon: "bumperRear" },
-                { id: "light_l", name: "Reflektor L", x: 32, y: 20, w: 8, h: 6, icon: "headlight" },
-                { id: "light_r", name: "Reflektor P", x: 60, y: 20, w: 8, h: 6, icon: "headlight" },
-                { id: "taillight_l", name: "Lampa tylna L", x: 38, y: 74, w: 6, h: 5, icon: "taillight" },
-                { id: "taillight_r", name: "Lampa tylna P", x: 56, y: 74, w: 6, h: 5, icon: "taillight" },
-                { id: "window_f", name: "Szyba przednia", x: 44, y: 24, w: 12, h: 7, icon: "window" },
-                { id: "roof", name: "Dach", x: 38, y: 28, w: 24, h: 8, icon: "roof" },
-                { id: "spoiler", name: "Spoiler", x: 42, y: 73, w: 16, h: 5, icon: "spoiler" },
-                { id: "logo", name: "Logo VW", x: 48, y: 22, w: 4, h: 4, icon: "logo" }
-            ]
-        },
-        {
-            brand: "BMW M3 E92",
-            color: 0x1e3a5f,
-            specificParts: {},
-            parts: [
-                { id: "hood", name: "Maska", x: 42, y: 18, w: 16, h: 12, icon: "hood" },
-                { id: "grille", name: "Nerki BMW", x: 44, y: 16, w: 12, h: 8, icon: "grille" },
-                { id: "door_fl", name: "Drzwi kierowcy", x: 30, y: 32, w: 10, h: 22, icon: "doorFront" },
-                { id: "door_fr", name: "Drzwi pasażera", x: 60, y: 32, w: 10, h: 22, icon: "doorFront" },
-                { id: "wheel_fl", name: "Koło przód", x: 26, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_fr", name: "Koło przód", x: 64, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_bl", name: "Koło tył", x: 36, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_br", name: "Koło tył", x: 54, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "bumper_f", name: "Zderzak M", x: 40, y: 10, w: 20, h: 8, icon: "bumperFront" },
-                { id: "bumper_b", name: "Zderzak M", x: 40, y: 72, w: 20, h: 8, icon: "bumperRear" },
-                { id: "light_l", name: "Angel Eyes L", x: 32, y: 20, w: 8, h: 6, icon: "headlight" },
-                { id: "light_r", name: "Angel Eyes P", x: 60, y: 20, w: 8, h: 6, icon: "headlight" },
-                { id: "roof", name: "Carbon Roof", x: 40, y: 28, w: 20, h: 8, icon: "roof" },
-                { id: "spoiler", name: "Spoiler", x: 44, y: 73, w: 12, h: 5, icon: "spoiler" }
-            ]
-        },
-        {
-            brand: "Ford Mustang GT",
-            color: 0xb22222,
-            specificParts: {},
-            parts: [
-                { id: "hood", name: "Maska", x: 42, y: 18, w: 16, h: 12, icon: "hood" },
-                { id: "grille", name: "Atrapa Mustang", x: 44, y: 16, w: 12, h: 8, icon: "grille" },
-                { id: "door_fl", name: "Drzwi L", x: 32, y: 32, w: 10, h: 22, icon: "doorFront" },
-                { id: "door_fr", name: "Drzwi P", x: 58, y: 32, w: 10, h: 22, icon: "doorFront" },
-                { id: "wheel_fl", name: "Koło przód", x: 28, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_fr", name: "Koło przód", x: 62, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_bl", name: "Koło tył", x: 38, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "wheel_br", name: "Koło tył", x: 52, y: 58, w: 10, h: 10, icon: "wheel" },
-                { id: "bumper_f", name: "Zderzak GT", x: 40, y: 10, w: 20, h: 8, icon: "bumperFront" },
-                { id: "bumper_b", name: "Zderzak tył", x: 40, y: 72, w: 20, h: 8, icon: "bumperRear" },
-                { id: "light_l", name: "Reflektor L", x: 34, y: 20, w: 8, h: 6, icon: "headlight" },
-                { id: "light_r", name: "Reflektor P", x: 58, y: 20, w: 8, h: 6, icon: "headlight" },
-                { id: "roof", name: "Dach", x: 42, y: 28, w: 16, h: 8, icon: "roof" }
-            ]
-        }
+        { brand: "Volkswagen Golf R", color: 0x2a6ebb, bodyShape: "golf",
+          parts: [
+            {id:"hood",name:"Maska",x:41,y:18,w:18,h:12, icon:"hood"},{id:"grille",name:"Atrapa VW",x:43,y:15,w:14,h:7, icon:"grille"},
+            {id:"door_fl",name:"Drzwi L przód",x:27,y:32,w:10,h:22, icon:"doorFront"},{id:"door_fr",name:"Drzwi P przód",x:63,y:32,w:10,h:22, icon:"doorFront"},
+            {id:"door_bl",name:"Drzwi L tył",x:37,y:32,w:10,h:22, icon:"doorRear"},{id:"door_br",name:"Drzwi P tył",x:53,y:32,w:10,h:22, icon:"doorRear"},
+            {id:"wheel_fl",name:"Koło L przód",x:24,y:58,w:10,h:10, icon:"wheel"},{id:"wheel_fr",name:"Koło P przód",x:66,y:58,w:10,h:10, icon:"wheel"},
+            {id:"wheel_bl",name:"Koło L tył",x:34,y:58,w:10,h:10, icon:"wheel"},{id:"wheel_br",name:"Koło P tył",x:56,y:58,w:10,h:10, icon:"wheel"},
+            {id:"bumper_f",name:"Zderzak przód",x:39,y:10,w:22,h:8, icon:"bumperFront"},{id:"bumper_b",name:"Zderzak tył",x:39,y:72,w:22,h:8, icon:"bumperRear"},
+            {id:"light_l",name:"Reflektor L",x:31,y:20,w:8,h:6, icon:"headlight"},{id:"light_r",name:"Reflektor P",x:61,y:20,w:8,h:6, icon:"headlight"},
+            {id:"taillight_l",name:"Lampa tylna L",x:37,y:74,w:7,h:5, icon:"taillight"},{id:"taillight_r",name:"Lampa tylna P",x:56,y:74,w:7,h:5, icon:"taillight"},
+            {id:"window_f",name:"Szyba przednia",x:43,y:23,w:14,h:7, icon:"window"},{id:"roof",name:"Dach",x:37,y:28,w:26,h:8, icon:"roof"},
+            {id:"spoiler",name:"Spoiler",x:41,y:73,w:18,h:5, icon:"spoiler"},{id:"logo",name:"Logo VW",x:47,y:22,w:6,h:6, icon:"logo"}
+        ] },
+        { brand: "BMW M3 Coupe", color: 0x1e3a5f, bodyShape: "bmw",
+          parts: [
+            {id:"hood",name:"Maska",x:41,y:18,w:18,h:12, icon:"hood"},{id:"grille",name:"Nerki BMW",x:43,y:15,w:14,h:7, icon:"grille"},
+            {id:"door_fl",name:"Drzwi L",x:29,y:34,w:11,h:22, icon:"doorFront"},{id:"door_fr",name:"Drzwi P",x:60,y:34,w:11,h:22, icon:"doorFront"},
+            {id:"wheel_fl",name:"Koło przód L",x:25,y:58,w:10,h:10, icon:"wheel"},{id:"wheel_fr",name:"Koło przód P",x:65,y:58,w:10,h:10, icon:"wheel"},
+            {id:"wheel_bl",name:"Koło tył L",x:35,y:58,w:10,h:10, icon:"wheel"},{id:"wheel_br",name:"Koło tył P",x:55,y:58,w:10,h:10, icon:"wheel"},
+            {id:"bumper_f",name:"Zderzak M",x:40,y:10,w:20,h:8, icon:"bumperFront"},{id:"bumper_b",name:"Zderzak M tył",x:40,y:72,w:20,h:8, icon:"bumperRear"},
+            {id:"light_l",name:"Angel Eyes L",x:32,y:20,w:8,h:6, icon:"headlight"},{id:"light_r",name:"Angel Eyes P",x:60,y:20,w:8,h:6, icon:"headlight"},
+            {id:"roof",name:"Dach Carbon",x:39,y:28,w:22,h:8, icon:"roof"},{id:"spoiler",name:"Spoiler",x:43,y:73,w:14,h:5, icon:"spoiler"}
+        ] },
+        { brand: "Ford Mustang GT", color: 0xb22222, bodyShape: "mustang",
+          parts: [
+            {id:"hood",name:"Maska",x:40,y:18,w:20,h:12, icon:"hood"},{id:"grille",name:"Atrapa Mustang",x:43,y:15,w:14,h:7, icon:"grille"},
+            {id:"door_fl",name:"Drzwi L",x:30,y:34,w:11,h:22, icon:"doorFront"},{id:"door_fr",name:"Drzwi P",x:59,y:34,w:11,h:22, icon:"doorFront"},
+            {id:"wheel_fl",name:"Koło przód L",x:26,y:58,w:10,h:10, icon:"wheel"},{id:"wheel_fr",name:"Koło przód P",x:64,y:58,w:10,h:10, icon:"wheel"},
+            {id:"wheel_bl",name:"Koło tył L",x:36,y:58,w:10,h:10, icon:"wheel"},{id:"wheel_br",name:"Koło tył P",x:54,y:58,w:10,h:10, icon:"wheel"},
+            {id:"bumper_f",name:"Zderzak GT",x:39,y:10,w:22,h:8, icon:"bumperFront"},{id:"bumper_b",name:"Zderzak tył",x:39,y:72,w:22,h:8, icon:"bumperRear"},
+            {id:"light_l",name:"Reflektor L",x:33,y:20,w:8,h:6, icon:"headlight"},{id:"light_r",name:"Reflektor P",x:59,y:20,w:8,h:6, icon:"headlight"},
+            {id:"roof",name:"Dach",x:40,y:28,w:20,h:8, icon:"roof"}
+        ] }
     ];
     
-    // Generowanie realistycznej sylwetki samochodu (zaawansowany SVG)
-    function generateCarSilhouette(brand) {
-        return `<svg viewBox="0 0 100 100" width="100%" height="100%" style="opacity:0.7"><path d="M22 50 L28 34 L36 28 L64 28 L72 34 L78 50 L78 68 L68 74 L32 74 L22 68 Z" fill="rgba(255,255,255,0.08)" stroke="rgba(255,210,90,0.6)" stroke-width="1.2"/><path d="M36 34 L64 34" stroke="rgba(255,200,100,0.5)" stroke-width="0.8"/><circle cx="32" cy="60" r="5" fill="none" stroke="rgba(255,100,100,0.5)"/><circle cx="68" cy="60" r="5" fill="none" stroke="rgba(255,100,100,0.5)"/><path d="M30 28 L34 32 L66 32 L70 28" stroke="gold" stroke-width="0.6" fill="none"/></svg>`;
+    // Funkcja generująca zaawansowany szkielet samochodu (oryginalny rysunek techniczny)
+    function getCarSkeletonSVG(brandModel) {
+        // ultra realistyczny szkielet z liniami nadwozia
+        if (brandModel.includes("Golf")) {
+            return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M20,52 L26,34 L38,26 L62,26 L74,34 L80,52 L80,70 L70,76 L30,76 L20,70Z" fill="rgba(255,255,255,0.05)" stroke="#ffcc66" stroke-width="1.3"/><path d="M38,32 L62,32" stroke="#ffaa55" stroke-width="1"/><ellipse cx="30" cy="62" rx="6" ry="5" fill="none" stroke="#ff8866"/><ellipse cx="70" cy="62" rx="6" ry="5" fill="none" stroke="#ff8866"/><path d="M28,28 L32,32 L68,32 L72,28" stroke="gold" fill="none"/><rect x="44" y="42" width="12" height="14" fill="none" stroke="#aaa"/></svg>`;
+        } else if (brandModel.includes("BMW")) {
+            return `<svg viewBox="0 0 100 100"><path d="M18,50 L24,32 L36,24 L64,24 L76,32 L82,50 L82,70 L70,76 L30,76 L18,70Z" fill="rgba(255,255,255,0.05)" stroke="#66ccff" stroke-width="1.2"/><path d="M36,30 L64,30" stroke="#66ccff"/><circle cx="30" cy="62" r="5" fill="none" stroke="#ff5555"/><circle cx="70" cy="62" r="5" fill="none" stroke="#ff5555"/><path d="M46 28 L54 28" stroke="silver"/></svg>`;
+        } else {
+            return `<svg viewBox="0 0 100 100"><path d="M22,50 L28,32 L40,26 L60,26 L72,32 L78,50 L78,72 L68,78 L32,78 L22,72Z" fill="rgba(255,255,255,0.06)" stroke="#ffaa66" stroke-width="1.4"/><path d="M40,30 L60,30" stroke="#ffaa66"/><ellipse cx="30" cy="64" rx="7" ry="6" fill="none" stroke="#ff7777"/><ellipse cx="70" cy="64" rx="7" ry="6" fill="none" stroke="#ff7777"/><path d="M28,26 L72,26" stroke="gold"/></svg>`;
+        }
     }
     
-    let currentLvlIdx = 0;
-    let placedCount = 0;
-    let totalParts = 0;
-    let draggedData = null;
-    let cloneElement = null;
-    let activePartId = null;
+    // Globalne zmienne
+    let currentLvl = 0;
+    let placedPartsCount = 0;
+    let totalPartsCount = 0;
+    let activeDragId = null;
+    let dragClone = null;
+    let isDragging = false;
     
-    const partsGridEl = document.getElementById('partsGrid');
-    const carSkeleton = document.getElementById('carSkeleton');
-    const progressFill = document.getElementById('global-progress');
-    const levelNumSpan = document.getElementById('level-num');
-    const carNameSpan = document.getElementById('car-name');
-    const resetBtn = document.getElementById('resetBtn');
-    const hintBtn = document.getElementById('hintBtn');
-    const nextBtn = document.getElementById('nextLevelBtn');
-    const modal3d = document.getElementById('modal3d');
+    const partsGridDiv = document.getElementById('partsGrid');
+    const skeletonContainer = document.getElementById('skeletonContainer');
+    const progressFill = document.getElementById('progressFill');
+    const levelCounterSpan = document.getElementById('levelCounter');
+    const carModelSpan = document.getElementById('carModelName');
+    const resetBtn = document.getElementById('resetGameBtn');
+    const hintBtn = document.getElementById('hintGameBtn');
+    const nextBtn = document.getElementById('nextGameBtn');
+    const threeModal = document.getElementById('threeModal');
     const threeContainer = document.getElementById('threeContainer');
-    const modalCarName = document.getElementById('modalCarName');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const nextModalBtn = document.getElementById('nextModalBtn');
+    const modalCarTitle = document.getElementById('modalCarTitle');
+    const close3dBtn = document.getElementById('close3dBtn');
+    const nextLevel3dBtn = document.getElementById('nextLevel3dBtn');
     
-    let scene, camera, renderer, controls, currentModel;
-    let rotationEnabled = false;
+    // Three.js
+    let scene, camera, renderer, controls, currentModelGroup;
+    let autoRotate = false;
     
     function initThree() {
+        if (!threeContainer) return;
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0f1a);
-        camera = new THREE.PerspectiveCamera(45, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
-        camera.position.set(2, 1.5, 4);
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        scene.background = new THREE.Color(0x050a12);
+        camera = new THREE.PerspectiveCamera(40, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
+        camera.position.set(2.5, 1.5, 4);
+        renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
         renderer.shadowMap.enabled = true;
         threeContainer.innerHTML = '';
@@ -495,19 +420,22 @@
         controls.enableZoom = true;
         const ambient = new THREE.AmbientLight(0x404060);
         scene.add(ambient);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-        dirLight.position.set(2, 5, 3);
-        dirLight.castShadow = true;
-        scene.add(dirLight);
-        const fillLight = new THREE.PointLight(0x4466cc, 0.4);
-        fillLight.position.set(-1, 1, 2);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        mainLight.position.set(2, 4, 3);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+        const fillLight = new THREE.PointLight(0x5577aa, 0.5);
+        fillLight.position.set(-1, 2, 2);
         scene.add(fillLight);
-        const animate = () => {
+        const rimLight = new THREE.PointLight(0xffaa66, 0.6);
+        rimLight.position.set(1, 1.5, -2);
+        scene.add(rimLight);
+        function animate() {
             requestAnimationFrame(animate);
             controls.update();
-            if (currentModel && rotationEnabled) currentModel.rotation.y += 0.008;
+            if (autoRotate && currentModelGroup) currentModelGroup.rotation.y += 0.008;
             renderer.render(scene, camera);
-        };
+        }
         animate();
         window.addEventListener('resize', () => {
             camera.aspect = threeContainer.clientWidth / threeContainer.clientHeight;
@@ -516,61 +444,74 @@
         });
     }
     
-    function loadRealisticModel(brand, colorHex) {
-        if (currentModel) scene.remove(currentModel);
+    function loadRealisticCarModel(brand, colorHex) {
+        if (currentModelGroup) scene.remove(currentModelGroup);
         const group = new THREE.Group();
-        const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, metalness: 0.85, roughness: 0.25, emissive: 0x000000 });
-        const bodyGeo = new THREE.BoxGeometry(1.9, 0.5, 0.9);
+        // nadwozie główne
+        const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, metalness: 0.92, roughness: 0.22, emissive: 0x000000 });
+        const bodyGeo = new THREE.BoxGeometry(2.0, 0.55, 1.05);
         const body = new THREE.Mesh(bodyGeo, bodyMat);
         body.position.y = 0.15;
         body.castShadow = true;
         group.add(body);
-        const roofMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.3 });
-        const roofGeo = new THREE.BoxGeometry(1.2, 0.25, 0.8);
+        // dach
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.4 });
+        const roofGeo = new THREE.BoxGeometry(1.3, 0.28, 0.9);
         const roof = new THREE.Mesh(roofGeo, roofMat);
-        roof.position.set(0, 0.45, -0.05);
+        roof.position.set(0, 0.52, -0.05);
         group.add(roof);
-        const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x88aaff, metalness: 0.2, roughness: 0.1, transparent: true, opacity: 0.45 });
-        const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.2, 0.05), glassMat);
-        windshield.position.set(0, 0.35, 0.48);
+        // szyby
+        const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x88bbff, metalness: 0.2, roughness: 0.08, transparent: true, opacity: 0.55 });
+        const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.2, 0.06), glassMat);
+        windshield.position.set(0, 0.42, 0.58);
         group.add(windshield);
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.6, roughness: 0.4 });
-        const wheelGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.2, 24);
-        const positions = [[-0.9, 0.05, 0.65], [0.9, 0.05, 0.65], [-0.9, 0.05, -0.65], [0.9, 0.05, -0.65]];
+        const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.18, 0.06), glassMat);
+        rearGlass.position.set(0, 0.42, -0.68);
+        group.add(rearGlass);
+        // koła
+        const wheelMatMetal = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.7, roughness: 0.3 });
+        const wheelGeo = new THREE.CylinderGeometry(0.23, 0.23, 0.22, 32);
+        const positions = [[-0.95, 0.09, 0.75], [0.95, 0.09, 0.75], [-0.95, 0.09, -0.75], [0.95, 0.09, -0.75]];
         positions.forEach(pos => {
-            const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+            const wheel = new THREE.Mesh(wheelGeo, wheelMatMetal);
             wheel.position.set(pos[0], pos[1], pos[2]);
             wheel.rotation.z = Math.PI/2;
             group.add(wheel);
-            const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.21, 8), new THREE.MeshStandardMaterial({ color: 0xccccaa, metalness: 0.9 }));
+            const rimGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.23, 12);
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0xdddd99, metalness: 0.88 });
+            const rim = new THREE.Mesh(rimGeo, rimMat);
             rim.position.set(pos[0], pos[1], pos[2]);
             rim.rotation.z = Math.PI/2;
             group.add(rim);
         });
-        group.scale.set(0.85, 0.85, 0.85);
+        // detale: atrapa
+        const grilleMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.3 });
+        const grilleBox = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.25, 0.05), grilleMat);
+        grilleBox.position.set(0, 0.22, 1.02);
+        group.add(grilleBox);
+        group.scale.set(0.88, 0.88, 0.88);
         scene.add(group);
-        currentModel = group;
+        currentModelGroup = group;
         controls.target.set(0, 0.2, 0);
         controls.update();
     }
     
-    function loadLevel() {
-        const level = levels[currentLvlIdx];
-        totalParts = level.parts.length;
-        placedCount = 0;
+    function buildLevel() {
+        const level = levels[currentLvl];
+        totalPartsCount = level.parts.length;
+        placedPartsCount = 0;
         progressFill.style.width = '0%';
         nextBtn.disabled = true;
-        levelNumSpan.innerText = currentLvlIdx+1;
-        carNameSpan.innerText = level.brand;
-        partsGridEl.innerHTML = '';
-        carSkeleton.innerHTML = generateCarSilhouette(level.brand);
+        levelCounterSpan.innerText = currentLvl+1;
+        carModelSpan.innerText = level.brand;
+        skeletonContainer.innerHTML = getCarSkeletonSVG(level.brand);
+        partsGridDiv.innerHTML = '';
         level.parts.forEach(part => {
             const card = document.createElement('div');
             card.className = 'part-card';
             card.dataset.id = part.id;
-            const iconSvg = realisticParts[part.icon] || realisticParts.hood;
-            card.innerHTML = `<div class="part-icon">${iconSvg}</div><div class="part-name">${part.name}</div>`;
-            partsGridEl.appendChild(card);
+            card.innerHTML = `<div class="part-icon">${partSVG[part.icon] || partSVG.hood}</div><div class="part-name">${part.name}</div>`;
+            partsGridDiv.appendChild(card);
             const slot = document.createElement('div');
             slot.className = 'drop-slot';
             slot.dataset.id = part.id;
@@ -578,125 +519,117 @@
             slot.style.top = `${part.y}%`;
             slot.style.width = `${part.w}%`;
             slot.style.height = `${part.h}%`;
-            carSkeleton.appendChild(slot);
+            skeletonContainer.parentElement?.appendChild(slot);
         });
-    }
-    
-    function updateProgress() {
-        const percent = (placedCount / totalParts) * 100;
-        progressFill.style.width = `${percent}%`;
-        if (placedCount === totalParts) {
-            nextBtn.disabled = false;
-            setTimeout(() => {
-                modalCarName.innerText = levels[currentLvlIdx].brand;
-                initThree();
-                loadRealisticModel(levels[currentLvlIdx].brand, levels[currentLvlIdx].color);
-                modal3d.classList.add('show');
-                rotationEnabled = true;
-            }, 300);
-        }
-    }
-    
-    function endDrag(x, y) {
-        if (!cloneElement) return;
-        const slots = document.querySelectorAll('.drop-slot');
-        let matched = false;
-        slots.forEach(slot => {
-            const rect = slot.getBoundingClientRect();
-            if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom && slot.dataset.id === activePartId && !slot.classList.contains('filled')) {
-                slot.classList.add('filled');
-                const partDef = levels[currentLvlIdx].parts.find(p => p.id === activePartId);
-                if (partDef) slot.innerHTML = realisticParts[partDef.icon];
-                const card = partsGridEl.querySelector(`.part-card[data-id="${activePartId}"]`);
-                if (card) card.classList.add('placed');
-                placedCount++;
-                updateProgress();
-                matched = true;
-            }
-            slot.classList.remove('highlight');
-        });
-        cloneElement.remove();
-        cloneElement = null;
-        activePartId = null;
+        attachDragEvents();
     }
     
     function attachDragEvents() {
-        const cards = document.querySelectorAll('.part-card:not(.placed)');
-        cards.forEach(card => {
-            const startDrag = (e) => {
+        document.querySelectorAll('.part-card:not(.placed)').forEach(card => {
+            const start = (e) => {
                 if (card.classList.contains('placed')) return;
                 e.preventDefault();
                 const clientX = e.clientX ?? e.touches?.[0]?.clientX;
                 const clientY = e.clientY ?? e.touches?.[0]?.clientY;
                 if (!clientX) return;
-                activePartId = card.dataset.id;
-                cloneElement = card.cloneNode(true);
-                cloneElement.style.position = 'fixed';
-                cloneElement.style.left = `${clientX - 40}px`;
-                cloneElement.style.top = `${clientY - 40}px`;
-                cloneElement.style.width = '90px';
-                cloneElement.style.opacity = '0.85';
-                cloneElement.style.zIndex = '9999';
-                cloneElement.style.pointerEvents = 'none';
-                cloneElement.classList.add('drag-clone');
-                document.body.appendChild(cloneElement);
+                activeDragId = card.dataset.id;
+                dragClone = card.cloneNode(true);
+                dragClone.classList.add('drag-clone');
+                dragClone.style.left = `${clientX - 50}px`;
+                dragClone.style.top = `${clientY - 50}px`;
+                dragClone.style.width = '90px';
+                document.body.appendChild(dragClone);
+                isDragging = true;
             };
-            card.addEventListener('mousedown', startDrag);
-            card.addEventListener('touchstart', startDrag, { passive: false });
+            card.addEventListener('mousedown', start);
+            card.addEventListener('touchstart', start, { passive: false });
         });
     }
     
-    function globalMoveHandler(e) {
-        if (!cloneElement) return;
+    function handleMove(e) {
+        if (!dragClone) return;
         e.preventDefault();
         const clientX = e.clientX ?? e.touches?.[0]?.clientX;
         const clientY = e.clientY ?? e.touches?.[0]?.clientY;
-        cloneElement.style.left = `${clientX - 45}px`;
-        cloneElement.style.top = `${clientY - 45}px`;
+        dragClone.style.left = `${clientX - 50}px`;
+        dragClone.style.top = `${clientY - 50}px`;
         const slots = document.querySelectorAll('.drop-slot');
         slots.forEach(slot => {
             const rect = slot.getBoundingClientRect();
-            if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom && slot.dataset.id === activePartId && !slot.classList.contains('filled')) {
+            if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom && slot.dataset.id === activeDragId && !slot.classList.contains('filled')) {
                 slot.classList.add('highlight');
             } else slot.classList.remove('highlight');
         });
     }
     
-    function globalUpHandler(e) {
-        if (!cloneElement) return;
+    function handleEnd(e) {
+        if (!dragClone) return;
         const clientX = e.clientX ?? e.changedTouches?.[0]?.clientX;
         const clientY = e.clientY ?? e.changedTouches?.[0]?.clientY;
-        endDrag(clientX, clientY);
+        const slots = document.querySelectorAll('.drop-slot');
+        let matched = false;
+        slots.forEach(slot => {
+            const rect = slot.getBoundingClientRect();
+            if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom && slot.dataset.id === activeDragId && !slot.classList.contains('filled')) {
+                slot.classList.add('filled');
+                const partDef = levels[currentLvl].parts.find(p => p.id === activeDragId);
+                if (partDef) slot.innerHTML = partSVG[partDef.icon];
+                const originalCard = partsGridDiv.querySelector(`.part-card[data-id="${activeDragId}"]`);
+                if (originalCard) originalCard.classList.add('placed');
+                placedPartsCount++;
+                const percent = (placedPartsCount / totalPartsCount) * 100;
+                progressFill.style.width = `${percent}%`;
+                if (placedPartsCount === totalPartsCount) {
+                    nextBtn.disabled = false;
+                    setTimeout(() => {
+                        modalCarTitle.innerText = levels[currentLvl].brand;
+                        initThree();
+                        loadRealisticCarModel(levels[currentLvl].brand, levels[currentLvl].color);
+                        threeModal.classList.add('show');
+                        autoRotate = true;
+                    }, 200);
+                }
+                matched = true;
+            }
+            slot.classList.remove('highlight');
+        });
+        dragClone.remove();
+        dragClone = null;
+        activeDragId = null;
+        isDragging = false;
+        attachDragEvents();
     }
     
-    resetBtn.addEventListener('click', () => { loadLevel(); attachDragEvents(); });
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('touchend', handleEnd);
+    
+    resetBtn.addEventListener('click', () => { buildLevel(); });
     hintBtn.addEventListener('click', () => {
         const unplaced = Array.from(document.querySelectorAll('.part-card:not(.placed)'));
         if (!unplaced.length) return;
-        const randomCard = unplaced[Math.floor(Math.random() * unplaced.length)];
-        const pid = randomCard.dataset.id;
+        const randCard = unplaced[Math.floor(Math.random() * unplaced.length)];
+        const pid = randCard.dataset.id;
         const targetSlot = document.querySelector(`.drop-slot[data-id="${pid}"]`);
-        if (targetSlot) targetSlot.classList.add('hint-animation');
-        setTimeout(() => targetSlot?.classList.remove('hint-animation'), 800);
+        if (targetSlot) targetSlot.classList.add('hint-effect');
+        setTimeout(() => targetSlot?.classList.remove('hint-effect'), 800);
     });
-    nextBtn.addEventListener('click', () => {
-        if (currentLvlIdx + 1 < levels.length) {
-            currentLvlIdx++;
-            loadLevel();
-            attachDragEvents();
+    function nextLevelAction() {
+        if (currentLvl + 1 < levels.length) {
+            currentLvl++;
+            buildLevel();
+            threeModal.classList.remove('show');
+            autoRotate = false;
+            if (currentModelGroup) scene?.remove(currentModelGroup);
         } else {
-            alert("Gratulacje! Ukończyłeś wszystkie modele! 🎉");
+            alert("🏁 Gratulacje! Ukończyłeś wszystkie modele! Świetna robota!");
         }
-    });
-    closeModalBtn.addEventListener('click', () => { modal3d.classList.remove('show'); rotationEnabled = false; if(currentModel) currentModel.rotation.y = 0; });
-    nextModalBtn.addEventListener('click', () => { modal3d.classList.remove('show'); if(currentLvlIdx+1 < levels.length) { currentLvlIdx++; loadLevel(); attachDragEvents(); } else alert("Koniec wszystkich poziomów!"); });
-    document.addEventListener('mousemove', globalMoveHandler);
-    document.addEventListener('touchmove', globalMoveHandler, { passive: false });
-    document.addEventListener('mouseup', globalUpHandler);
-    document.addEventListener('touchend', globalUpHandler);
-    
-    loadLevel();
-    attachDragEvents();
+    }
+    nextBtn.addEventListener('click', nextLevelAction);
+    nextLevel3dBtn.addEventListener('click', () => { threeModal.classList.remove('show'); nextLevelAction(); });
+    close3dBtn.addEventListener('click', () => { threeModal.classList.remove('show'); autoRotate = false; });
+    buildLevel();
 </script>
 </body>
 </html>
